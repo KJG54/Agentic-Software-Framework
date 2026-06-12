@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-101",
+  "owner": "agent-beta",
+  "branch": "agent/TASK-101-demo-prove-the-two-agent-coordination-loop",
+  "claimed_at": "2026-06-12T23:50:25.626Z",
+  "heartbeat_at": "2026-06-12T23:50:25.626Z",
+  "expires_at": "2026-06-13T03:50:25.626Z",
+  "files_touched_estimate": [
+    "docs/coordination-demo.md"
+  ],
+  "depends_on": [],
+  "overlap_override": null
+}
