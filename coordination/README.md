@@ -1,5 +1,4 @@
-# Coordination Placeholder
+# Coordination State
 
-Live queue, claim, registry, and handoff files belong on the dedicated `coordination/main` branch and are managed by `appbuilder` commands.
-
-This placeholder documents the expected location without making files on `main` authoritative.
+This branch stores live operational coordination state.
+Use `appbuilder` commands instead of manually editing these files.
