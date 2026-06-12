@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-003",
+  "title": "Derive merged_unreleased_claims and orphaned_branches in status",
+  "description": "status currently stubs merged_unreleased_claims and orphaned_branches as empty arrays. Derive them for real: a claim whose branch is already merged into main but whose claim file still exists is merged-unreleased; an agent/TASK-* branch with no matching claim or queue task is orphaned.",
+  "depends_on": [],
+  "files_touched_estimate": ["cli/appbuilder.js", "tests/appbuilder.test.js"],
+  "acceptance_criteria": [
+    "status lists claims whose branch is merged into main but not yet released",
+    "status lists agent/* branches that have no live claim",
+    "integration test exercises at least one of the two derivations"
+  ]
+}
