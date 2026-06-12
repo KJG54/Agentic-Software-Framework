@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://app-builder.local/contracts/schemas/v1/handoff.schema.json",
+  "title": "Handoff Frontmatter",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "task",
+    "agent",
+    "branch",
+    "status",
+    "files_changed",
+    "tests_run",
+    "tests_passed",
+    "blockers",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "task": { "type": "string", "pattern": "^TASK-[0-9]{3,}$" },
+    "agent": { "type": "string", "minLength": 1 },
+    "branch": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["complete", "partial", "blocked", "abandoned"] },
+    "files_changed": { "type": "array", "items": { "type": "string" } },
+    "tests_run": { "type": "boolean" },
+    "tests_passed": { "type": "boolean" },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "next_recommended_task": { "type": "string" },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

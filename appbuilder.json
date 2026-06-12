@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "framework_name": "app-builder",
+  "framework_version": "2.0.0",
+  "default_schema_version": "1.0",
+  "coordination_branch": "coordination/main",
+  "default_mcp_profile": "minimal",
+  "claim_ttl_minutes": 240,
+  "generated_dir": "coordination/generated",
+  "projects_dir": "projects",
+  "vault_framework_dir": "vault/framework",
+  "vault_projects_dir": "vault/projects"
+}

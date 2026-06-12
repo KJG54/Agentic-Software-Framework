@@ -1,0 +1,17 @@
+{
+  "name": "app-builder-v2",
+  "version": "2.0.0",
+  "private": true,
+  "description": "CLI-first AI-assisted application-building workbench.",
+  "type": "commonjs",
+  "bin": {
+    "appbuilder": "cli/appbuilder.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "doctor": "node cli/appbuilder.js doctor"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

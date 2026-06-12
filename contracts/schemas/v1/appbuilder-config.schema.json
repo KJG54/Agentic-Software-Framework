@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://app-builder.local/contracts/schemas/v1/appbuilder-config.schema.json",
+  "title": "App Builder Config",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "framework_name",
+    "framework_version",
+    "default_schema_version",
+    "coordination_branch",
+    "default_mcp_profile",
+    "claim_ttl_minutes",
+    "generated_dir",
+    "projects_dir",
+    "vault_framework_dir",
+    "vault_projects_dir"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "framework_name": { "type": "string", "minLength": 1 },
+    "framework_version": { "type": "string", "minLength": 1 },
+    "default_schema_version": { "type": "string", "minLength": 1 },
+    "coordination_branch": { "type": "string", "minLength": 1 },
+    "default_mcp_profile": { "type": "string", "minLength": 1 },
+    "claim_ttl_minutes": { "type": "integer", "minimum": 1 },
+    "generated_dir": { "type": "string", "minLength": 1 },
+    "projects_dir": { "type": "string", "minLength": 1 },
+    "vault_framework_dir": { "type": "string", "minLength": 1 },
+    "vault_projects_dir": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}

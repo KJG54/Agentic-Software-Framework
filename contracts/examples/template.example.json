@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "id": "node-cli",
+  "name": "Node CLI",
+  "description": "A dependency-light Node.js command line project.",
+  "tags": ["node", "cli"],
+  "required_files": ["package.json"]
+}

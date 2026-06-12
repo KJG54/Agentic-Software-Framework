@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://app-builder.local/contracts/schemas/v1/claim.schema.json",
+  "title": "Claim",
+  "type": "object",
+  "required": ["schema_version", "task", "owner", "branch", "claimed_at", "heartbeat_at", "expires_at"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "task": { "type": "string", "pattern": "^TASK-[0-9]{3,}$" },
+    "owner": { "type": "string", "minLength": 1 },
+    "branch": { "type": "string", "minLength": 1 },
+    "claimed_at": { "type": "string", "format": "date-time" },
+    "heartbeat_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "files_touched_estimate": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "depends_on": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^TASK-[0-9]{3,}$" },
+      "default": []
+    },
+    "overlap_override": {
+      "type": ["object", "null"],
+      "properties": {
+        "reason": { "type": "string" },
+        "overlaps": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

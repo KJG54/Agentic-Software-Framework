@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://app-builder.local/contracts/schemas/v1/mcp-profile.schema.json",
+  "title": "MCP Profile",
+  "type": "object",
+  "required": ["schema_version", "id", "servers"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "id": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "servers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "optional": { "type": "boolean", "default": true }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}

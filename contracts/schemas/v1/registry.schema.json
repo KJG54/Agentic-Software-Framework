@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://app-builder.local/contracts/schemas/v1/registry.schema.json",
+  "title": "Agent Registry Entry",
+  "type": "object",
+  "required": ["schema_version", "agent_id", "allowed_paths", "default_branch_prefix"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "agent_id": { "type": "string", "minLength": 1 },
+    "allowed_paths": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "default_branch_prefix": { "type": "string", "minLength": 1 },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-001",
+  "owner": "agent-cli-1",
+  "branch": "agent/TASK-001-doctor-command",
+  "claimed_at": "2026-06-12T15:00:00.000Z",
+  "heartbeat_at": "2026-06-12T15:00:00.000Z",
+  "expires_at": "2026-06-12T19:00:00.000Z",
+  "files_touched_estimate": ["cli/", "tests/"],
+  "depends_on": [],
+  "overlap_override": null
+}

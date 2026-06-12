@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0",
+  "agent_id": "agent-cli-1",
+  "allowed_paths": ["cli/", "core/", "tests/", "contracts/"],
+  "default_branch_prefix": "agent/",
+  "capabilities": ["javascript", "cli", "tests"]
+}

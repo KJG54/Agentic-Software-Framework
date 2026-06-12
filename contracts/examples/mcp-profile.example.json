@@ -1,0 +1,6 @@
+{
+  "schema_version": "1.0",
+  "id": "minimal",
+  "description": "Minimal local profile for core App Builder work.",
+  "servers": []
+}

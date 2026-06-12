@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-001",
+  "title": "Implement doctor command",
+  "description": "Add the initial diagnostic command for App Builder V2.",
+  "depends_on": [],
+  "files_touched_estimate": ["cli/", "tests/"],
+  "acceptance_criteria": [
+    "Doctor reports missing Git coordination setup clearly",
+    "Doctor validates appbuilder.json"
+  ]
+}
