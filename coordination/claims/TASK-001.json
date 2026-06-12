@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-001",
+  "owner": "agent-alpha",
+  "branch": "agent/TASK-001-guard-expired-claim-reclaim-in-claim-command",
+  "claimed_at": "2026-06-12T23:50:45.012Z",
+  "heartbeat_at": "2026-06-12T23:50:45.012Z",
+  "expires_at": "2026-06-13T03:50:45.012Z",
+  "files_touched_estimate": [
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "depends_on": [],
+  "overlap_override": null
+}
