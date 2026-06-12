@@ -1,4 +1,4 @@
-# App Builder V2
+# Agentic Software Framework
 
 App Builder V2 is a CLI-first, artifact-driven workbench for moving an idea through a repeatable application-building loop:
 
