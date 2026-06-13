@@ -1,5 +1,6 @@
 .appbuilder/
 .remember/
+.obsidian/
 coordination/generated/
 node_modules/
 npm-debug.log*
