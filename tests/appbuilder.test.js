@@ -104,6 +104,48 @@ test("coordination thin slice initializes, claims, hands off, and becomes ready"
   assert.equal(JSON.parse(releasedStatus.stdout).active_tasks.length, 0);
 });
 
+test("claim refuses to overwrite an expired claim until it is reaped", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run("git", ["init", "-b", "main"], fixture);
+  configureGitUser(fixture);
+  run("git", ["add", "."], fixture);
+  run("git", ["commit", "-m", "initial"], fixture);
+  run(process.execPath, [cliPath, "init-coordination"], fixture);
+
+  const coord = path.join(fixture, ".appbuilder", "coordination-worktree");
+  const taskPath = path.join(coord, "coordination", "queue", "TASK-001.json");
+  fs.writeFileSync(taskPath, JSON.stringify({
+    schema_version: "1.0",
+    id: "TASK-001",
+    title: "Update docs",
+    depends_on: [],
+    files_touched_estimate: ["docs/"]
+  }, null, 2));
+  run("git", ["add", "coordination/queue/TASK-001.json"], coord);
+  run("git", ["commit", "-m", "coordination: publish TASK-001"], coord);
+
+  const owner = { ...process.env, APPBUILDER_AGENT_ID: "agent-owner" };
+  run(process.execPath, [cliPath, "claim", "TASK-001"], fixture, owner);
+
+  // Force the claim to look expired, then a different agent tries to take it.
+  const claimPath = path.join(coord, "coordination", "claims", "TASK-001.json");
+  const claimDoc = JSON.parse(fs.readFileSync(claimPath, "utf8"));
+  claimDoc.expires_at = new Date(Date.now() - 60 * 1000).toISOString();
+  fs.writeFileSync(claimPath, `${JSON.stringify(claimDoc, null, 2)}\n`);
+
+  const taker = { ...process.env, APPBUILDER_AGENT_ID: "agent-taker" };
+  const rejected = runFail(process.execPath, [cliPath, "claim", "TASK-001"], fixture, taker);
+  assert.match(rejected.stderr + rejected.stdout, /release --expired/);
+  assert.equal(fs.existsSync(claimPath), true, "expired claim must remain until reaped");
+
+  // After an audited reap, the claim is available again.
+  run(process.execPath, [cliPath, "release", "--expired", "TASK-001", "--reason", "ttl elapsed"], fixture, owner);
+  assert.equal(fs.existsSync(claimPath), false);
+  run(process.execPath, [cliPath, "claim", "TASK-001"], fixture, taker);
+  const reclaimed = JSON.parse(fs.readFileSync(claimPath, "utf8"));
+  assert.equal(reclaimed.owner, "agent-taker");
+});
+
 test("maybePush retries after remote moves and resets on conflicting race", { timeout: 60000 }, () => {
   const base = fs.mkdtempSync(path.join(os.tmpdir(), "appbuilder-race-"));
   const origin = path.join(base, "origin.git");

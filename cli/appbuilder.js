@@ -559,7 +559,15 @@ function claim(cwd, args) {
 
   const claims = readClaims(worktree);
   const existing = claims.find((item) => item.task === taskId);
-  if (existing && !isExpired(existing)) throw new Error(`${taskId} is already claimed by ${existing.owner} until ${existing.expires_at}`);
+  if (existing) {
+    if (isExpired(existing)) {
+      throw new Error(
+        `${taskId} has an expired claim by ${existing.owner} (expired ${existing.expires_at}). ` +
+        `Reap it first with an audited takeover: appbuilder release --expired ${taskId} --reason <text>.`
+      );
+    }
+    throw new Error(`${taskId} is already claimed by ${existing.owner} until ${existing.expires_at}`);
+  }
   const dependencyErrors = dependencyErrorsForTask(task, worktree, project.root);
   if (dependencyErrors.length) throw new Error(`Dependencies are incomplete:\n${dependencyErrors.map((item) => `- ${item}`).join("\n")}`);
 
