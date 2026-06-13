@@ -527,6 +527,37 @@ test("doctor verifies agent onboarding files (AGENTS.md + CLAUDE.md)", () => {
   assert.match(out, /failures:[\s\S]*onboarding:AGENTS\.md/);
 });
 
+test("doctor guards the plan-interview wiring against drift", () => {
+  const fixture = makeFixture();
+  const doctor = () =>
+    spawnSync(process.execPath, [cliPath, "doctor"], { cwd: fixture, encoding: "utf8" }).stdout;
+
+  const guidePath = path.join(fixture, ".agent", "plan-interview.md");
+  const planCmdPath = path.join(fixture, ".claude", "commands", "plan.md");
+  const agentsPath = path.join(fixture, "AGENTS.md");
+
+  // Fully wired: guide present and referenced by both operator surfaces.
+  fs.mkdirSync(path.dirname(planCmdPath), { recursive: true });
+  fs.writeFileSync(guidePath, "# Plan Interview\n");
+  fs.writeFileSync(planCmdPath, "Run the interview in .agent/plan-interview.md before writing.\n");
+  fs.writeFileSync(agentsPath, "/plan opens the build-type interview: .agent/plan-interview.md\n");
+  let out = doctor();
+  assert.match(out, /ok plan-interview:guide/);
+  assert.match(out, /ok plan-interview:plan\.md/);
+  assert.match(out, /ok plan-interview:AGENTS\.md/);
+
+  // /plan command stops referencing the guide -> drift problem.
+  fs.writeFileSync(planCmdPath, "nothing about the interview here\n");
+  out = doctor();
+  assert.match(out, /problem plan-interview:plan\.md/);
+
+  // Guide file deleted -> problem and listed as a hard failure.
+  fs.rmSync(guidePath);
+  out = doctor();
+  assert.match(out, /problem plan-interview:guide/);
+  assert.match(out, /failures:[\s\S]*plan-interview:guide/);
+});
+
 function configureGitUser(repo) {
   run("git", ["config", "user.email", "test@example.com"], repo);
   run("git", ["config", "user.name", "Test Agent"], repo);
