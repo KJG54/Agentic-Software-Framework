@@ -519,11 +519,39 @@ function deriveStatus(project, worktree) {
     current_phase: "coordination",
     active_tasks: activeTasks,
     expired_claims: expiredClaims,
-    merged_unreleased_claims: [],
-    orphaned_branches: [],
+    merged_unreleased_claims: mergedUnreleasedClaims(project.root, claims),
+    orphaned_branches: orphanedBranches(project.root, claims),
     blockers: [],
     last_validated_artifact: handoffs.length ? "coordination/handoffs" : null
   };
+}
+
+function branchIsAncestorOfMain(root, branch) {
+  if (!branch || !branchExists(root, branch)) return false;
+  return git(root, ["merge-base", "--is-ancestor", branch, "main"], { allowFail: true }).status === 0;
+}
+
+function mergedUnreleasedClaims(root, claims) {
+  if (!isGitRepo(root)) return [];
+  const merged = [];
+  for (const claim of claims) {
+    if (branchIsAncestorOfMain(root, claim.branch)) {
+      merged.push({ id: claim.task, owner: claim.owner, branch: claim.branch });
+    }
+  }
+  return merged;
+}
+
+function listAgentBranches(root) {
+  const result = git(root, ["for-each-ref", "--format=%(refname:short)", "refs/heads/agent"], { allowFail: true });
+  if (result.status !== 0) return [];
+  return result.stdout.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+}
+
+function orphanedBranches(root, claims) {
+  if (!isGitRepo(root)) return [];
+  const claimed = new Set(claims.map((claim) => claim.branch).filter(Boolean));
+  return listAgentBranches(root).filter((branch) => !claimed.has(branch));
 }
 
 function readClaims(worktree) {
