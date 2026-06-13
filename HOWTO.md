@@ -40,10 +40,24 @@ Scaffolds `projects/my-app/` with three stubs:
 - `architecture.md` — a notes stub.
 - `task-plan.json` — the list of tasks to queue (starts empty).
 
-Now **fill them in** (yourself, or hand off to an agent): write a real `summary`, `goals`, and
-`features` in `requirements.json`, and author `task-plan.json` as a list of
-`TASK-NNN`-id'd tasks (each with `title`, `files_touched_estimate`, and optional `depends_on`
-referencing other tasks in the same plan).
+Now **fill them in.** If you drive this through an agent (`/plan` in Claude Code, or the same
+`/plan` flow Codex loads from [AGENTS.md](AGENTS.md)), it won't just ask you to type JSON — it
+runs a **build-type interview** first, scripted in
+[.agent/plan-interview.md](.agent/plan-interview.md):
+
+- **Phase A — universal triage.** Four questions, asked one at a time, that pin down what
+  you're building, the core outcome, who uses it, and which build-type it is (game, CLI, app,
+  library, or something else).
+- **Phase B — build-type deep-dive.** Only the track matching your Phase A answer runs (~4–6
+  more questions), drilling into the specifics that build-type needs.
+
+The agent then **synthesizes** the answers into the artifacts and shows them back at two
+**confirm-back gates** — first the proposed `requirements.json` (`summary`, `goals`,
+`features`, `constraints`), then the first-draft `task-plan.json` (the `TASK-NNN` tasks, each
+with `title`, `files_touched_estimate`, and optional `depends_on`). Nothing is written to disk
+until you confirm each gate. Driving it yourself by hand works too — fill the same fields in
+directly — but the interview is what makes the requirements step thorough rather than a blank
+form.
 
 ```bash
 appbuilder plan compile my-app
@@ -90,8 +104,9 @@ load automatically — if they don't appear, run `/doctor` (or `appbuilder docto
 - `/status` — coordination status (active/expired claims, orphaned branches).
 - `/doctor` — framework diagnostics, including the `onboarding:*` checks that confirm the repo
   is agent-drivable.
-- `/plan <slug>` — guide an idea through `plan new` → fill artifacts → `plan compile` → (human
-  review) → `plan seed`.
+- `/plan <slug>` — guide an idea through `plan new` → **build-type interview** → fill artifacts
+  (with confirm-back gates) → `plan compile` → (human review) → `plan seed`. See
+  [.agent/plan-interview.md](.agent/plan-interview.md) for the interview script.
 - `/work <TASK>` — claim a task and run the per-task loop (claim → test-first → handoff →
   ready → PR/merge → release).
 
