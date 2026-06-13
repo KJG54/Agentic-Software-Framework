@@ -104,6 +104,102 @@ test("coordination thin slice initializes, claims, hands off, and becomes ready"
   assert.equal(JSON.parse(releasedStatus.stdout).active_tasks.length, 0);
 });
 
+test("maybePush retries after remote moves and resets on conflicting race", { timeout: 60000 }, () => {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), "appbuilder-race-"));
+  const origin = path.join(base, "origin.git");
+  run("git", ["init", "--bare", "-b", "main", origin], base);
+  const repoA = path.join(base, "a");
+  const repoB = path.join(base, "b");
+  run("git", ["clone", origin, repoA], base);
+  configureGitUser(repoA);
+  fs.writeFileSync(path.join(repoA, "shared.txt"), "base\n");
+  run("git", ["add", "."], repoA);
+  run("git", ["commit", "-m", "init"], repoA);
+  run("git", ["push", "-u", "origin", "main"], repoA);
+  run("git", ["clone", origin, repoB], base);
+  configureGitUser(repoB);
+
+  // Non-conflicting race: B is stale but its commit touches a different file,
+  // so maybePush must rebase onto origin and succeed on retry.
+  fs.writeFileSync(path.join(repoA, "a.txt"), "from a\n");
+  run("git", ["add", "a.txt"], repoA);
+  run("git", ["commit", "-m", "add a"], repoA);
+  assert.equal(cli.maybePush(repoA, "main"), true);
+  fs.writeFileSync(path.join(repoB, "b.txt"), "from b\n");
+  run("git", ["add", "b.txt"], repoB);
+  run("git", ["commit", "-m", "add b"], repoB);
+  assert.equal(cli.maybePush(repoB, "main"), true);
+  const subjects = run("git", ["log", "--format=%s", "origin/main"], repoB).stdout.trim().split(/\r?\n/);
+  assert.deepEqual(subjects, ["add b", "add a", "init"]);
+
+  // Conflicting race: both sides edit the same file. Origin wins, the loser is
+  // reset to origin, and the error carries the race code.
+  fs.writeFileSync(path.join(repoA, "shared.txt"), "from a\n");
+  run("git", ["add", "shared.txt"], repoA);
+  run("git", ["commit", "-m", "a wins"], repoA);
+  assert.equal(cli.maybePush(repoA, "main"), true);
+  fs.writeFileSync(path.join(repoB, "shared.txt"), "from b\n");
+  run("git", ["add", "shared.txt"], repoB);
+  run("git", ["commit", "-m", "b loses"], repoB);
+  assert.throws(() => cli.maybePush(repoB, "main"), (error) => {
+    assert.equal(error.code, "ECOORDINATIONRACE");
+    assert.match(error.message, /Lost a coordination race/);
+    return true;
+  });
+  assert.equal(fs.readFileSync(path.join(repoB, "shared.txt"), "utf8").replace(/\r\n/g, "\n"), "from a\n");
+  const local = run("git", ["rev-parse", "HEAD"], repoB).stdout.trim();
+  const remote = run("git", ["rev-parse", "origin/main"], repoB).stdout.trim();
+  assert.equal(local, remote);
+});
+
+test("claim sees remote claims across clones without manual sync", { timeout: 60000 }, () => {
+  const fixture = makeFixture();
+  run("git", ["init", "-b", "main"], fixture);
+  configureGitUser(fixture);
+  run("git", ["add", "."], fixture);
+  run("git", ["commit", "-m", "initial"], fixture);
+  const origin = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "appbuilder-origin-")), "origin.git");
+  run("git", ["init", "--bare", "-b", "main", origin], fixture);
+  run("git", ["remote", "add", "origin", origin], fixture);
+  run("git", ["push", "-u", "origin", "main"], fixture);
+  run(process.execPath, [cliPath, "init-coordination"], fixture);
+
+  const coordA = path.join(fixture, ".appbuilder", "coordination-worktree");
+  const taskPath = path.join(coordA, "coordination", "queue", "TASK-001.json");
+  fs.writeFileSync(taskPath, JSON.stringify({
+    schema_version: "1.0",
+    id: "TASK-001",
+    title: "Update docs",
+    depends_on: [],
+    files_touched_estimate: ["docs/"]
+  }, null, 2));
+  run("git", ["add", "coordination/queue/TASK-001.json"], coordA);
+  run("git", ["commit", "-m", "coordination: publish TASK-001"], coordA);
+  run("git", ["push", "origin", "coordination/main"], coordA);
+
+  const cloneB = fs.mkdtempSync(path.join(os.tmpdir(), "appbuilder-clone-"));
+  run("git", ["clone", origin, "repo"], cloneB);
+  const repoB = path.join(cloneB, "repo");
+  configureGitUser(repoB);
+  run(process.execPath, [cliPath, "init-coordination"], repoB);
+
+  run(process.execPath, [cliPath, "claim", "TASK-001"], fixture, { ...process.env, APPBUILDER_AGENT_ID: "agent-a" });
+
+  // B never pulls; claim must fetch coordination state itself and reject.
+  const rejected = runFail(process.execPath, [cliPath, "claim", "TASK-001"], repoB, { ...process.env, APPBUILDER_AGENT_ID: "agent-b" });
+  assert.match(rejected.stderr + rejected.stdout, /already claimed by agent-a/);
+
+  const status = run(process.execPath, [cliPath, "status"], repoB, { ...process.env, APPBUILDER_AGENT_ID: "agent-b" });
+  const parsed = JSON.parse(status.stdout);
+  assert.equal(parsed.active_tasks.length, 1);
+  assert.equal(parsed.active_tasks[0].owner, "agent-a");
+});
+
+function configureGitUser(repo) {
+  run("git", ["config", "user.email", "test@example.com"], repo);
+  run("git", ["config", "user.name", "Test Agent"], repo);
+}
+
 function makeFixture() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "appbuilder-test-"));
   copyFile("appbuilder.json", dir);
@@ -129,5 +225,11 @@ function copyDir(relative, toRoot) {
 function run(command, args, cwd, env = process.env) {
   const result = spawnSync(command, args, { cwd, env, encoding: "utf8", stdio: "pipe" });
   assert.equal(result.status, 0, `${command} ${args.join(" ")} failed\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
+  return result;
+}
+
+function runFail(command, args, cwd, env = process.env) {
+  const result = spawnSync(command, args, { cwd, env, encoding: "utf8", stdio: "pipe" });
+  assert.notEqual(result.status, 0, `${command} ${args.join(" ")} unexpectedly succeeded\nSTDOUT:\n${result.stdout}`);
   return result;
 }
