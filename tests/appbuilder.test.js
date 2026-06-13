@@ -146,6 +146,55 @@ test("claim refuses to overwrite an expired claim until it is reaped", { timeout
   assert.equal(reclaimed.owner, "agent-taker");
 });
 
+test("handoff records test results and ready gates on them", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run("git", ["init", "-b", "main"], fixture);
+  configureGitUser(fixture);
+  run("git", ["add", "."], fixture);
+  run("git", ["commit", "-m", "initial"], fixture);
+  run(process.execPath, [cliPath, "init-coordination"], fixture);
+
+  const coord = path.join(fixture, ".appbuilder", "coordination-worktree");
+  const taskPath = path.join(coord, "coordination", "queue", "TASK-001.json");
+  fs.writeFileSync(taskPath, JSON.stringify({
+    schema_version: "1.0",
+    id: "TASK-001",
+    title: "Update docs",
+    depends_on: [],
+    files_touched_estimate: ["docs/"]
+  }, null, 2));
+  run("git", ["add", "coordination/queue/TASK-001.json"], coord);
+  run("git", ["commit", "-m", "coordination: publish TASK-001"], coord);
+
+  const env = { ...process.env, APPBUILDER_AGENT_ID: "agent-test" };
+  run(process.execPath, [cliPath, "claim", "TASK-001"], fixture, env);
+  fs.writeFileSync(path.join(fixture, "docs", "note.md"), "# Note\n");
+  run("git", ["add", "docs/note.md"], fixture);
+  run("git", ["commit", "-m", "docs: add note"], fixture);
+
+  const handoffsDir = path.join(coord, "coordination", "handoffs");
+  const latestHandoff = () => {
+    const file = fs.readdirSync(handoffsDir).filter((f) => f.startsWith("TASK-001--")).sort().pop();
+    return fs.readFileSync(path.join(handoffsDir, file), "utf8");
+  };
+
+  // Failing tests recorded -> ready must fail on the test gate.
+  run(process.execPath, [cliPath, "handoff", "--task", "TASK-001", "--status", "complete", "--tests-run", "--tests-failed"], fixture, env);
+  const failedText = latestHandoff();
+  assert.match(failedText, /tests_run: true/);
+  assert.match(failedText, /tests_passed: false/);
+  const blocked = runFail(process.execPath, [cliPath, "ready", "TASK-001"], fixture, env);
+  assert.match(blocked.stdout + blocked.stderr, /tests/i);
+
+  // Passing tests recorded -> the test gate clears.
+  run(process.execPath, [cliPath, "handoff", "--task", "TASK-001", "--status", "complete", "--tests-run", "--tests-passed"], fixture, env);
+  const passedText = latestHandoff();
+  assert.match(passedText, /tests_run: true/);
+  assert.match(passedText, /tests_passed: true/);
+  const ok = run(process.execPath, [cliPath, "ready", "TASK-001"], fixture, env);
+  assert.match(ok.stdout, /ready for human merge review/);
+});
+
 test("maybePush retries after remote moves and resets on conflicting race", { timeout: 60000 }, () => {
   const base = fs.mkdtempSync(path.join(os.tmpdir(), "appbuilder-race-"));
   const origin = path.join(base, "origin.git");
