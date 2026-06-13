@@ -399,6 +399,17 @@ function doctor(cwd) {
     check(`schema:${schema}`, fs.existsSync(path.join(root, "contracts", "schemas", "v1", `${schema}.schema.json`)), "exists");
   }
 
+  // Agent onboarding: the framework is only drivable if an agent dropped into the repo
+  // auto-loads its charter. AGENTS.md is the canonical source; CLAUDE.md must point at it.
+  check("onboarding:AGENTS.md", fs.existsSync(path.join(root, "AGENTS.md")), "exists");
+  const claudePath = path.join(root, "CLAUDE.md");
+  if (!fs.existsSync(claudePath)) {
+    check("onboarding:CLAUDE.md", false, "missing");
+  } else {
+    const refsAgents = /AGENTS\.md/.test(fs.readFileSync(claudePath, "utf8"));
+    check("onboarding:CLAUDE.md", refsAgents, refsAgents ? "references AGENTS.md" : "present but does not reference AGENTS.md");
+  }
+
   const gitOk = isGitRepo(root);
   check("git-repository", gitOk, gitOk ? "inside worktree" : "not a Git repository");
   if (gitOk && project) {

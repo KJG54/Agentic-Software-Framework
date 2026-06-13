@@ -493,6 +493,30 @@ test("claim sees remote claims across clones without manual sync", { timeout: 60
   assert.equal(parsed.active_tasks[0].owner, "agent-a");
 });
 
+test("doctor verifies agent onboarding files (AGENTS.md + CLAUDE.md)", () => {
+  const fixture = makeFixture();
+  const doctor = () =>
+    spawnSync(process.execPath, [cliPath, "doctor"], { cwd: fixture, encoding: "utf8" }).stdout;
+
+  // Present and intact (CLAUDE.md references AGENTS.md).
+  fs.writeFileSync(path.join(fixture, "AGENTS.md"), "# Agents charter\n");
+  fs.writeFileSync(path.join(fixture, "CLAUDE.md"), "See @AGENTS.md for instructions.\n");
+  let out = doctor();
+  assert.match(out, /ok onboarding:AGENTS\.md/);
+  assert.match(out, /ok onboarding:CLAUDE\.md/);
+
+  // CLAUDE.md present but gutted (no reference to AGENTS.md) -> problem.
+  fs.writeFileSync(path.join(fixture, "CLAUDE.md"), "nothing useful here\n");
+  out = doctor();
+  assert.match(out, /problem onboarding:CLAUDE\.md/);
+
+  // AGENTS.md missing -> problem and listed as a hard failure.
+  fs.rmSync(path.join(fixture, "AGENTS.md"));
+  out = doctor();
+  assert.match(out, /problem onboarding:AGENTS\.md/);
+  assert.match(out, /failures:[\s\S]*onboarding:AGENTS\.md/);
+});
+
 function configureGitUser(repo) {
   run("git", ["config", "user.email", "test@example.com"], repo);
   run("git", ["config", "user.name", "Test Agent"], repo);
