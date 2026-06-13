@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-204",
+  "title": "Add a drift guard (doctor check + test)",
+  "description": "Add a doctor check that .agent/plan-interview.md exists and is referenced from the operator surfaces, and a test in tests/appbuilder.test.js asserting the guide's presence and that the /plan command references it. Written test-first.",
+  "depends_on": [
+    "TASK-201",
+    "TASK-202"
+  ],
+  "files_touched_estimate": [
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "doctor reports an ok line when the interview guide exists and is referenced, and a fail line when it is missing or unreferenced.",
+    "A test asserts the guide exists and that .claude/commands/plan.md references it.",
+    "The full test suite passes."
+  ]
+}
