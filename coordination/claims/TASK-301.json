@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-301",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-301-make-parsefrontmatter-crlf-tolerant-and-normaliz",
+  "claimed_at": "2026-06-13T22:38:13.749Z",
+  "heartbeat_at": "2026-06-13T22:38:13.749Z",
+  "expires_at": "2026-06-14T02:38:13.749Z",
+  "files_touched_estimate": [
+    "cli/appbuilder.js",
+    ".gitattributes",
+    "tests/appbuilder.test.js"
+  ],
+  "depends_on": [],
+  "overlap_override": null
+}
