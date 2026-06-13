@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-202",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-202-wire-the-interview-into-the-agent-operator-surfa",
+  "claimed_at": "2026-06-13T23:04:45.771Z",
+  "heartbeat_at": "2026-06-13T23:04:45.771Z",
+  "expires_at": "2026-06-14T03:04:45.771Z",
+  "files_touched_estimate": [
+    ".claude/commands/plan.md",
+    "AGENTS.md"
+  ],
+  "depends_on": [
+    "TASK-201"
+  ],
+  "overlap_override": null
+}
