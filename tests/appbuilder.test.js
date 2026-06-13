@@ -291,6 +291,117 @@ test("claim enforces registry allowed_paths when an entry exists", { timeout: 30
   assert.equal(freeClaim.owner, "agent-free");
 });
 
+test("plan new scaffolds project stubs and refuses to clobber", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+
+  const projectDir = path.join(fixture, "projects", "demo-app");
+  const requirements = JSON.parse(fs.readFileSync(path.join(projectDir, "requirements.json"), "utf8"));
+  assert.equal(requirements.schema_version, "1.0");
+  assert.equal(requirements.project, "demo-app");
+  assert.equal(requirements.summary, "");
+  assert.deepEqual(requirements.goals, []);
+  assert.deepEqual(requirements.features, []);
+  assert.deepEqual(requirements.constraints, []);
+
+  const taskPlan = JSON.parse(fs.readFileSync(path.join(projectDir, "task-plan.json"), "utf8"));
+  assert.equal(taskPlan.project, "demo-app");
+  assert.deepEqual(taskPlan.tasks, []);
+
+  const architecture = fs.readFileSync(path.join(projectDir, "architecture.md"), "utf8");
+  assert.match(architecture, /schema_version: "1.0"/);
+
+  // Re-running must refuse rather than overwrite filled-in work.
+  const refused = runFail(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  assert.match(refused.stderr + refused.stdout, /already exists/);
+});
+
+test("plan compile gates on filled requirements and a consistent task plan", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  const projectDir = path.join(fixture, "projects", "demo-app");
+  const requirementsPath = path.join(projectDir, "requirements.json");
+  const taskPlanPath = path.join(projectDir, "task-plan.json");
+
+  // Unfilled requirements -> compile fails on semantic readiness.
+  const empty = runFail(process.execPath, [cliPath, "plan", "compile", "demo-app"], fixture);
+  assert.match(empty.stdout + empty.stderr, /summary|goals|features/);
+
+  fs.writeFileSync(requirementsPath, JSON.stringify({
+    schema_version: "1.0",
+    project: "demo-app",
+    summary: "A small demo app.",
+    goals: ["Ship a working slice"],
+    features: [{ name: "core", description: "the core feature" }],
+    constraints: []
+  }, null, 2));
+  fs.writeFileSync(taskPlanPath, JSON.stringify({
+    schema_version: "1.0",
+    project: "demo-app",
+    tasks: [
+      { schema_version: "1.0", id: "TASK-001", title: "Build core", files_touched_estimate: ["cli/"], depends_on: [] }
+    ]
+  }, null, 2));
+  const ok = run(process.execPath, [cliPath, "plan", "compile", "demo-app"], fixture);
+  assert.match(ok.stdout, /passed/);
+
+  // A dangling depends_on is rejected.
+  fs.writeFileSync(taskPlanPath, JSON.stringify({
+    schema_version: "1.0",
+    project: "demo-app",
+    tasks: [
+      { schema_version: "1.0", id: "TASK-001", title: "Build core", files_touched_estimate: ["cli/"], depends_on: ["TASK-999"] }
+    ]
+  }, null, 2));
+  const dangling = runFail(process.execPath, [cliPath, "plan", "compile", "demo-app"], fixture);
+  assert.match(dangling.stdout + dangling.stderr, /TASK-999|depends_on/);
+});
+
+test("plan seed publishes tasks and skips ids already in the queue", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run("git", ["init", "-b", "main"], fixture);
+  configureGitUser(fixture);
+  run("git", ["add", "."], fixture);
+  run("git", ["commit", "-m", "initial"], fixture);
+  run(process.execPath, [cliPath, "init-coordination"], fixture);
+
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  const projectDir = path.join(fixture, "projects", "demo-app");
+  fs.writeFileSync(path.join(projectDir, "requirements.json"), JSON.stringify({
+    schema_version: "1.0",
+    project: "demo-app",
+    summary: "A small demo app.",
+    goals: ["Ship a working slice"],
+    features: [{ name: "core" }],
+    constraints: []
+  }, null, 2));
+  fs.writeFileSync(path.join(projectDir, "task-plan.json"), JSON.stringify({
+    schema_version: "1.0",
+    project: "demo-app",
+    tasks: [
+      { schema_version: "1.0", id: "TASK-001", title: "Build core", files_touched_estimate: ["cli/"], depends_on: [] },
+      { schema_version: "1.0", id: "TASK-002", title: "Add docs", files_touched_estimate: ["docs/"], depends_on: [] }
+    ]
+  }, null, 2));
+
+  // Pre-seed TASK-002 directly so seed must skip it.
+  const coord = path.join(fixture, ".appbuilder", "coordination-worktree");
+  const queueDir = path.join(coord, "coordination", "queue");
+  fs.writeFileSync(path.join(queueDir, "TASK-002.json"), JSON.stringify({
+    schema_version: "1.0", id: "TASK-002", title: "Pre-existing", files_touched_estimate: ["other/"]
+  }, null, 2));
+  run("git", ["add", "coordination/queue/TASK-002.json"], coord);
+  run("git", ["commit", "-m", "coordination: pre-existing TASK-002"], coord);
+
+  const seeded = run(process.execPath, [cliPath, "plan", "seed", "demo-app"], fixture);
+  assert.match(seeded.stdout, /ok seed: TASK-001 published/);
+  assert.match(seeded.stdout, /skip seed: TASK-002 already exists/);
+
+  assert.equal(fs.existsSync(path.join(queueDir, "TASK-001.json")), true);
+  const keptTask002 = JSON.parse(fs.readFileSync(path.join(queueDir, "TASK-002.json"), "utf8"));
+  assert.equal(keptTask002.title, "Pre-existing", "existing queue task must not be overwritten");
+});
+
 test("maybePush retries after remote moves and resets on conflicting race", { timeout: 60000 }, () => {
   const base = fs.mkdtempSync(path.join(os.tmpdir(), "appbuilder-race-"));
   const origin = path.join(base, "origin.git");

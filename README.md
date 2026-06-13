@@ -37,4 +37,19 @@ appbuilder ready TASK-001
 appbuilder events
 ```
 
-The workflow commands `start`, `plan`, `scaffold`, `build`, `test`, `review`, and `ship` are present as placeholders for later phases.
+## Planning Commands
+
+```bash
+appbuilder plan new <slug>       # scaffold projects/<slug>/ (requirements, architecture, task-plan)
+# fill requirements.json and author task-plan.json
+appbuilder plan compile <slug>   # validate requirements + task plan
+appbuilder plan seed <slug>      # publish the plan's tasks to the coordination queue
+```
+
+`plan` turns an idea into the planning artifacts under `projects/<slug>/`. The CLI scaffolds
+and validates; an agent fills in the requirements and task plan. `compile` enforces that the
+requirements are filled and the task plan is internally consistent before `seed` publishes the
+tasks to the human-reviewed coordination queue. See [HOWTO.md](HOWTO.md) for the full operator
+walkthrough.
+
+The workflow commands `start`, `scaffold`, `build`, `test`, `review`, and `ship` are present as placeholders for later phases.

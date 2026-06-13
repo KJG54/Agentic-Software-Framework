@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://app-builder.local/contracts/schemas/v1/task-plan.schema.json",
+  "title": "Task Plan",
+  "type": "object",
+  "required": ["schema_version", "project", "tasks"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "project": { "type": "string", "minLength": 1 },
+    "tasks": {
+      "type": "array",
+      "items": { "type": "object" },
+      "default": []
+    }
+  },
+  "additionalProperties": true
+}
