@@ -139,6 +139,10 @@ function validateClaim(claimFile, root) {
   return { ...result, claim };
 }
 
+function validateRegistryEntry(entry, root) {
+  return validateJsonArtifact(validationRoot(root), "registry", entry);
+}
+
 function validateHandoff(file, root) {
   const text = fs.readFileSync(file, "utf8");
   const parsed = parseFrontmatter(text);
@@ -562,6 +566,26 @@ function readClaims(worktree) {
     .map((file) => readJson(path.join(dir, file)));
 }
 
+function readRegistry(worktree) {
+  const dir = path.join(worktree, "coordination", "registry");
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir)
+    .filter((file) => file.endsWith(".json"))
+    .map((file) => readJson(path.join(dir, file)));
+}
+
+function registryEntryFor(worktree, agentId) {
+  return readRegistry(worktree).find((entry) => entry.agent_id === agentId) || null;
+}
+
+function pathWithinAllowed(file, allowedPaths) {
+  const target = normalizePath(file);
+  return allowedPaths.some((allowed) => {
+    const base = normalizePath(allowed);
+    return target === base || target.startsWith(`${base}/`);
+  });
+}
+
 function readHandoffs(worktree) {
   const dir = path.join(worktree, "coordination", "handoffs");
   if (!fs.existsSync(dir)) return [];
@@ -606,6 +630,18 @@ function claim(cwd, args) {
   }
 
   const agentId = agentIdFromEnv();
+  const registryEntry = registryEntryFor(worktree, agentId);
+  if (registryEntry) {
+    const registryValidation = validateRegistryEntry(registryEntry, project.root);
+    if (!registryValidation.ok) throw new Error(`Registry entry for ${agentId} is invalid:\n${registryValidation.errors.join("\n")}`);
+    const outside = (task.files_touched_estimate || []).filter((file) => !pathWithinAllowed(file, registryEntry.allowed_paths || []));
+    if (outside.length) {
+      throw new Error(
+        `Agent ${agentId} is not allowed to touch:\n${outside.map((file) => `- ${file}`).join("\n")}\n` +
+        `allowed_paths: ${(registryEntry.allowed_paths || []).join(", ") || "(none)"}`
+      );
+    }
+  }
   const branch = task.branch || `agent/${taskId}-${slug(task.title)}`;
   const now = new Date();
   const expires = new Date(now.getTime() + project.config.claim_ttl_minutes * 60 * 1000);
