@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "project": "fix-frontmatter-crlf",
+  "summary": "Fix a cross-platform CRLF defect in the CLI's frontmatter parser so doctor recognizes schema_version frontmatter on Windows checkouts, and normalize tracked text artifacts to LF so git autocrlf stops reintroducing the problem.",
+  "goals": [
+    "doctor passes on a fresh Windows checkout instead of falsely reporting frontmatter as missing.",
+    "parseFrontmatter tolerates both LF and CRLF line endings at the frontmatter delimiter.",
+    "Prevent regressions by normalizing markdown/JSON artifacts to LF via .gitattributes and covering the parser with a test."
+  ],
+  "features": [
+    {
+      "name": "CRLF-tolerant frontmatter parsing",
+      "description": "parseFrontmatter accepts a leading CRLF ('---' then carriage-return newline) as well as a bare LF so frontmatter artifacts validate regardless of line endings."
+    },
+    {
+      "name": "Line-ending normalization",
+      "description": "A .gitattributes normalizes tracked text artifacts (.md/.json) to LF in the repo so git autocrlf does not rewrite them to CRLF on Windows checkout."
+    },
+    {
+      "name": "Regression test",
+      "description": "A test asserts parseFrontmatter reads schema_version from CRLF-terminated frontmatter."
+    }
+  ],
+  "constraints": [
+    "No behavior change beyond line-ending tolerance; the CLI stays deterministic and zero-dependency.",
+    "Do not alter the frontmatter schema or any artifact contents."
+  ]
+}
