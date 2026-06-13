@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-201",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-201-author-the-shared-build-type-interview-guide",
+  "claimed_at": "2026-06-13T22:23:31.587Z",
+  "heartbeat_at": "2026-06-13T22:23:31.587Z",
+  "expires_at": "2026-06-14T02:23:31.587Z",
+  "files_touched_estimate": [
+    ".agent/plan-interview.md"
+  ],
+  "depends_on": [],
+  "overlap_override": null
+}
