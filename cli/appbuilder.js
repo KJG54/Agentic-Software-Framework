@@ -255,7 +255,24 @@ function ensureCoordinationWorktree(project, options = {}) {
     fs.mkdirSync(path.dirname(worktree), { recursive: true });
     git(root, ["worktree", "add", worktree, branch]);
   }
+  syncCoordinationWorktree(worktree, branch);
   return worktree;
+}
+
+function syncCoordinationWorktree(worktree, branch) {
+  if (!hasRemote(worktree)) return false;
+  const fetched = git(worktree, ["fetch", "origin", branch], { allowFail: true });
+  if (fetched.status !== 0) return false;
+  const rebase = git(worktree, ["rebase", `origin/${branch}`], { allowFail: true });
+  if (rebase.status !== 0) {
+    git(worktree, ["rebase", "--abort"], { allowFail: true });
+    throw new Error(
+      `Coordination worktree has local commits that conflict with origin/${branch}. ` +
+      `Inspect ${worktree}, or discard the local coordination commits with: ` +
+      `git -C "${worktree}" reset --hard origin/${branch}`
+    );
+  }
+  return true;
 }
 
 function commitIfChanged(repo, message) {
@@ -268,9 +285,30 @@ function commitIfChanged(repo, message) {
 
 function maybePush(repo, branch) {
   if (!hasRemote(repo)) return false;
-  const result = git(repo, ["push", "origin", branch], { allowFail: true });
-  if (result.status !== 0) throw new Error(`Failed to push ${branch}:\n${result.stderr.trim()}`);
-  return true;
+  let result = git(repo, ["push", "origin", branch], { allowFail: true });
+  if (result.status === 0) return true;
+
+  // The remote moved while this command was running. Replay local commits on
+  // top of origin and retry once; a rebase conflict means a true race (e.g.
+  // two agents claiming the same task), where origin wins and local state is
+  // restored from it.
+  const fetched = git(repo, ["fetch", "origin", branch], { allowFail: true });
+  if (fetched.status === 0) {
+    const rebase = git(repo, ["rebase", `origin/${branch}`], { allowFail: true });
+    if (rebase.status !== 0) {
+      git(repo, ["rebase", "--abort"], { allowFail: true });
+      git(repo, ["reset", "--hard", `origin/${branch}`]);
+      const error = new Error(
+        `Lost a coordination race on ${branch}: a conflicting update reached origin first. ` +
+        `Local coordination commits were discarded and state was restored from origin.`
+      );
+      error.code = "ECOORDINATIONRACE";
+      throw error;
+    }
+    result = git(repo, ["push", "origin", branch], { allowFail: true });
+    if (result.status === 0) return true;
+  }
+  throw new Error(`Failed to push ${branch}:\n${result.stderr.trim()}`);
 }
 
 function initCoordination(cwd) {
@@ -550,7 +588,16 @@ function claim(cwd, args) {
   if (!claimValidation.ok) throw new Error(`Generated claim is invalid:\n${claimValidation.errors.join("\n")}`);
   writeJson(path.join(worktree, "coordination", "claims", `${taskId}.json`), claimDoc);
   commitIfChanged(worktree, `coordination: claim ${taskId} by ${agentId}`);
-  maybePush(worktree, project.config.coordination_branch);
+  try {
+    maybePush(worktree, project.config.coordination_branch);
+  } catch (error) {
+    if (error.code !== "ECOORDINATIONRACE") throw error;
+    const winner = readClaims(worktree).find((item) => item.task === taskId);
+    const detail = winner
+      ? `${taskId} is now claimed by ${winner.owner} until ${winner.expires_at}.`
+      : "Run appbuilder status and retry.";
+    throw new Error(`Claim for ${taskId} lost the race to another agent. ${detail}`);
+  }
 
   if (isGitRepo(project.root)) {
     if (branchExists(project.root, branch)) git(project.root, ["checkout", branch], { capture: false });
@@ -873,6 +920,8 @@ if (require.main === module) {
 
 module.exports = {
   main,
+  maybePush,
+  syncCoordinationWorktree,
   validateAppbuilderConfig,
   validateQueueTask,
   validateClaim,
