@@ -46,6 +46,16 @@ blockers: []
   assert.deepEqual(parsed.data.blockers, []);
 });
 
+test("frontmatter parser tolerates CRLF line endings", () => {
+  // git autocrlf rewrites checked-out files to CRLF on Windows; the parser must
+  // still recognize the frontmatter delimiter and read schema_version.
+  const markdown = "---\r\nschema_version: \"1.0\"\r\nproject: demo\r\n---\r\n\r\n# Doc\r\n";
+  const parsed = cli.parseFrontmatter(markdown);
+  assert.notEqual(parsed, null, "CRLF frontmatter should parse, not return null");
+  assert.equal(parsed.data.schema_version, "1.0");
+  assert.equal(parsed.data.project, "demo");
+});
+
 test("path overlap detects parent and child paths", () => {
   assert.equal(cli.pathsOverlap("cli/", "cli/appbuilder.js"), true);
   assert.equal(cli.pathsOverlap("contracts/schemas", "cli"), false);

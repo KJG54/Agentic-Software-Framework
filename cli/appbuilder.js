@@ -171,7 +171,9 @@ function validateHandoff(file, root) {
 }
 
 function parseFrontmatter(text) {
-  if (!text.startsWith("---\n")) return null;
+  // Accept both LF and CRLF openings: git autocrlf rewrites checked-out files
+  // to CRLF on Windows, which must not hide the frontmatter from doctor.
+  if (!/^---\r?\n/.test(text)) return null;
   const end = text.indexOf("\n---", 4);
   if (end === -1) return null;
   const yaml = text.slice(4, end).trim();

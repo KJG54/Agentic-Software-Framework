@@ -1,0 +1,7 @@
+# Normalize line endings so git autocrlf does not rewrite tracked text
+# artifacts to CRLF on Windows checkout (which broke frontmatter detection).
+* text=auto eol=lf
+
+*.md   text eol=lf
+*.json text eol=lf
+*.js   text eol=lf
