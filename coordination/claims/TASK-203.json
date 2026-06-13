@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-203",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-203-update-howto-md-for-human-operators",
+  "claimed_at": "2026-06-13T23:38:04.195Z",
+  "heartbeat_at": "2026-06-13T23:38:04.195Z",
+  "expires_at": "2026-06-14T03:38:04.195Z",
+  "files_touched_estimate": [
+    "HOWTO.md"
+  ],
+  "depends_on": [
+    "TASK-201"
+  ],
+  "overlap_override": null
+}
