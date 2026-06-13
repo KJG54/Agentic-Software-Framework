@@ -237,6 +237,60 @@ test("status derives merged-unreleased claims and orphaned branches", { timeout:
   assert(!parsed.orphaned_branches.includes("agent/TASK-001-update-docs"), "claimed branch is not orphaned");
 });
 
+test("claim enforces registry allowed_paths when an entry exists", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run("git", ["init", "-b", "main"], fixture);
+  configureGitUser(fixture);
+  run("git", ["add", "."], fixture);
+  run("git", ["commit", "-m", "initial"], fixture);
+  run(process.execPath, [cliPath, "init-coordination"], fixture);
+
+  const coord = path.join(fixture, ".appbuilder", "coordination-worktree");
+  const queueDir = path.join(coord, "coordination", "queue");
+  fs.writeFileSync(path.join(queueDir, "TASK-001.json"), JSON.stringify({
+    schema_version: "1.0",
+    id: "TASK-001",
+    title: "Touch cli",
+    depends_on: [],
+    files_touched_estimate: ["cli/"]
+  }, null, 2));
+  fs.writeFileSync(path.join(queueDir, "TASK-002.json"), JSON.stringify({
+    schema_version: "1.0",
+    id: "TASK-002",
+    title: "Touch docs",
+    depends_on: [],
+    files_touched_estimate: ["docs/"]
+  }, null, 2));
+  const registryDir = path.join(coord, "coordination", "registry");
+  fs.mkdirSync(registryDir, { recursive: true });
+  fs.writeFileSync(path.join(registryDir, "agent-scoped.json"), JSON.stringify({
+    schema_version: "1.0",
+    agent_id: "agent-scoped",
+    allowed_paths: ["docs/"],
+    default_branch_prefix: "agent/"
+  }, null, 2));
+  run("git", ["add", "coordination"], coord);
+  run("git", ["commit", "-m", "coordination: publish tasks and registry"], coord);
+
+  const scoped = { ...process.env, APPBUILDER_AGENT_ID: "agent-scoped" };
+  const free = { ...process.env, APPBUILDER_AGENT_ID: "agent-free" };
+
+  // Registered agent claiming outside its allowed_paths is rejected.
+  const rejected = runFail(process.execPath, [cliPath, "claim", "TASK-001"], fixture, scoped);
+  assert.match(rejected.stderr + rejected.stdout, /cli\//);
+  assert.equal(fs.existsSync(path.join(coord, "coordination", "claims", "TASK-001.json")), false);
+
+  // Same agent claiming within allowed_paths succeeds.
+  run(process.execPath, [cliPath, "claim", "TASK-002"], fixture, scoped);
+  const scopedClaim = JSON.parse(fs.readFileSync(path.join(coord, "coordination", "claims", "TASK-002.json"), "utf8"));
+  assert.equal(scopedClaim.owner, "agent-scoped");
+
+  // Unregistered agent keeps unrestricted Phase 1 behavior.
+  run(process.execPath, [cliPath, "claim", "TASK-001"], fixture, free);
+  const freeClaim = JSON.parse(fs.readFileSync(path.join(coord, "coordination", "claims", "TASK-001.json"), "utf8"));
+  assert.equal(freeClaim.owner, "agent-free");
+});
+
 test("maybePush retries after remote moves and resets on conflicting race", { timeout: 60000 }, () => {
   const base = fs.mkdtempSync(path.join(os.tmpdir(), "appbuilder-race-"));
   const origin = path.join(base, "origin.git");
