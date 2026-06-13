@@ -413,14 +413,16 @@ function doctor(cwd) {
   }
 
   // Plan-interview drift guard: the build-type interview is part of the /plan contract.
-  // The guide must exist and stay referenced from both operator surfaces, or /plan silently
-  // drifts back to "just fill in requirements" on whichever surface lost the link.
+  // The guide must exist and stay referenced from every operator surface — the two agent
+  // surfaces (plan.md, AGENTS.md) and the human HOWTO — or /plan silently drifts back to
+  // "just fill in requirements" on whichever surface lost the link.
   const interviewRel = ".agent/plan-interview.md";
   const interviewExists = fs.existsSync(path.join(root, interviewRel));
   check("plan-interview:guide", interviewExists, interviewExists ? "exists" : `${interviewRel} missing`);
   const surfaces = [
     { name: "plan-interview:plan.md", file: path.join(".claude", "commands", "plan.md") },
-    { name: "plan-interview:AGENTS.md", file: "AGENTS.md" }
+    { name: "plan-interview:AGENTS.md", file: "AGENTS.md" },
+    { name: "plan-interview:HOWTO.md", file: "HOWTO.md" }
   ];
   for (const { name, file } of surfaces) {
     const surfacePath = path.join(root, file);

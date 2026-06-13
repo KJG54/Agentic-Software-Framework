@@ -535,21 +535,30 @@ test("doctor guards the plan-interview wiring against drift", () => {
   const guidePath = path.join(fixture, ".agent", "plan-interview.md");
   const planCmdPath = path.join(fixture, ".claude", "commands", "plan.md");
   const agentsPath = path.join(fixture, "AGENTS.md");
+  const howtoPath = path.join(fixture, "HOWTO.md");
 
-  // Fully wired: guide present and referenced by both operator surfaces.
+  // Fully wired: guide present and referenced by every operator surface
+  // (the two agent surfaces plus the human HOWTO).
   fs.mkdirSync(path.dirname(planCmdPath), { recursive: true });
   fs.writeFileSync(guidePath, "# Plan Interview\n");
   fs.writeFileSync(planCmdPath, "Run the interview in .agent/plan-interview.md before writing.\n");
   fs.writeFileSync(agentsPath, "/plan opens the build-type interview: .agent/plan-interview.md\n");
+  fs.writeFileSync(howtoPath, "/plan runs the build-type interview: .agent/plan-interview.md\n");
   let out = doctor();
   assert.match(out, /ok plan-interview:guide/);
   assert.match(out, /ok plan-interview:plan\.md/);
   assert.match(out, /ok plan-interview:AGENTS\.md/);
+  assert.match(out, /ok plan-interview:HOWTO\.md/);
 
   // /plan command stops referencing the guide -> drift problem.
   fs.writeFileSync(planCmdPath, "nothing about the interview here\n");
   out = doctor();
   assert.match(out, /problem plan-interview:plan\.md/);
+
+  // HOWTO stops pointing operators at the guide -> drift problem too.
+  fs.writeFileSync(howtoPath, "nothing about the interview here\n");
+  out = doctor();
+  assert.match(out, /problem plan-interview:HOWTO\.md/);
 
   // Guide file deleted -> problem and listed as a hard failure.
   fs.rmSync(guidePath);
