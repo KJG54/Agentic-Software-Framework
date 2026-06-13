@@ -73,6 +73,7 @@ Core coordination commands:
   claim --refresh <task>   Refresh heartbeat_at and expires_at for a claim
   release <task-id>        Delete an active claim after merge or expiry
   handoff                  Write a machine-parseable handoff
+                           (--tests-run --tests-passed|--tests-failed records test results)
   ready <task-id>          Run the before-merge gate
   events                   Derive coordination events from Git history
 
@@ -754,6 +755,7 @@ function handoff(cwd, args) {
   const changedFiles = changedFilesForHandoff(project.root);
   const blockers = readOption(args, "--blocker") ? [readOption(args, "--blocker")] : [];
   const warnings = readOption(args, "--warning") ? [readOption(args, "--warning")] : [];
+  const tests = resolveTestResults(args);
   const timestamp = compactTimestamp(new Date());
   const file = path.join(worktree, "coordination", "handoffs", `${taskId}--${safeAgent(agent)}--${timestamp}.md`);
   const body = buildHandoffMarkdown({
@@ -764,6 +766,8 @@ function handoff(cwd, args) {
     filesChanged: changedFiles,
     blockers,
     warnings,
+    testsRun: tests.run,
+    testsPassed: tests.passed,
     nextRecommendedTask: readOption(args, "--next") || ""
   });
   writeText(file, body);
@@ -773,6 +777,14 @@ function handoff(cwd, args) {
   maybePush(worktree, project.config.coordination_branch);
   console.log(`handoff=${path.relative(worktree, file)}`);
   return 0;
+}
+
+function resolveTestResults(args) {
+  const passedFlag = args.includes("--tests-passed");
+  const failedFlag = args.includes("--tests-failed");
+  if (passedFlag && failedFlag) throw new Error("Pass only one of --tests-passed or --tests-failed.");
+  const run = args.includes("--tests-run") || passedFlag || failedFlag;
+  return { run, passed: run ? passedFlag : false };
 }
 
 function inferTaskFromBranch(root) {
@@ -811,8 +823,8 @@ agent: "${input.agent}"
 branch: "${input.branch}"
 status: ${input.status}
 files_changed:${yamlList(input.filesChanged)}
-tests_run: false
-tests_passed: false
+tests_run: ${input.testsRun === true}
+tests_passed: ${input.testsPassed === true}
 blockers:${yamlList(input.blockers)}
 next_recommended_task: "${input.nextRecommendedTask}"
 warnings:${yamlList(input.warnings)}
@@ -838,7 +850,7 @@ ${input.blockers.length ? input.blockers.map((item) => `- ${item}`).join("\n") :
 
 ## Tests run
 
-Not recorded by this command.
+${input.testsRun === true ? (input.testsPassed === true ? "Test suite ran and passed." : "Test suite ran and FAILED.") : "Not run by this handoff."}
 
 ## Next recommended task
 
@@ -880,16 +892,20 @@ function ready(cwd, args) {
 
   const handoffValidation = latestValidHandoff(worktree, taskId, project.root);
   if (!handoffValidation) failures.push(`No valid handoff found for ${taskId}`);
-  else if (handoffValidation.data.status !== "complete") failures.push(`Latest valid handoff status is ${handoffValidation.data.status}, not complete`);
+  else {
+    if (handoffValidation.data.status !== "complete") failures.push(`Latest valid handoff status is ${handoffValidation.data.status}, not complete`);
+    if (handoffValidation.data.tests_run === true) {
+      if (handoffValidation.data.tests_passed !== true) failures.push("Latest handoff reports tests ran but did not pass; fix tests before merge");
+    } else {
+      warnings.push("Latest handoff reports tests were not run; run the suite and record it with handoff --tests-run --tests-passed");
+    }
+  }
 
   const changedFiles = changedFilesForHandoff(project.root);
   for (const file of changedFiles) {
     if (file.startsWith("coordination/") || file.startsWith(".appbuilder/")) failures.push(`Forbidden changed file in task branch: ${file}`);
     if (looksLikeSecret(file, project.root)) failures.push(`Possible secret in changed file: ${file}`);
   }
-
-  if (!fs.existsSync(path.join(project.root, "package.json"))) warnings.push("No package.json found, tests were not run by ready");
-  else warnings.push("Run npm test before merge; ready currently records this as a Phase 1 warning");
 
   for (const warning of warnings) console.log(`warn ${warning}`);
   if (failures.length) {
