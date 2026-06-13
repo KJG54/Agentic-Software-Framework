@@ -1,7 +1,8 @@
 # HOWTO — Operating App Builder V2
 
-This guide is for **humans** driving the framework. Agents follow the rules in
-[.agent/rules/](.agent/rules/); this is the operator's view.
+This guide is for **humans** driving the framework. Agents auto-load their charter from
+[AGENTS.md](AGENTS.md) (which points to the detailed rules in [.agent/rules/](.agent/rules/));
+this is the operator's view.
 
 App Builder V2 is a CLI-first workbench. There is **no LLM inside the CLI** — the `appbuilder`
 commands scaffold, validate, and coordinate; the *thinking* (writing requirements, building
@@ -79,6 +80,23 @@ appbuilder release TASK-001 --reason "merged via PR #N"     # free the claim
 
 The human stays in the loop at two points: approving the plan before `seed`, and reviewing each
 PR before merge.
+
+## Slash commands (Claude Code)
+
+In a Claude Code session opened in this repo, these shortcuts wrap the CLI verbs above. They
+load automatically — if they don't appear, run `/doctor` (or `appbuilder doctor`) and check the
+`onboarding:*` lines.
+
+- `/status` — coordination status (active/expired claims, orphaned branches).
+- `/doctor` — framework diagnostics, including the `onboarding:*` checks that confirm the repo
+  is agent-drivable.
+- `/plan <slug>` — guide an idea through `plan new` → fill artifacts → `plan compile` → (human
+  review) → `plan seed`.
+- `/work <TASK>` — claim a task and run the per-task loop (claim → test-first → handoff →
+  ready → PR/merge → release).
+
+The commands are thin wrappers; the underlying `appbuilder` verbs work the same without them.
+Codex agents don't get the shortcuts but auto-load the same workflow from [AGENTS.md](AGENTS.md).
 
 ## Later phases
 
