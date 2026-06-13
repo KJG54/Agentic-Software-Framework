@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-202",
+  "title": "Wire the interview into the agent operator surfaces",
+  "description": "Update .claude/commands/plan.md step 2 to direct the agent to conduct the interview in .agent/plan-interview.md before writing artifacts; update the /plan row and slash-command section in AGENTS.md to reference the guide so Codex operators follow it. No behavior change to the CLI.",
+  "depends_on": [
+    "TASK-201"
+  ],
+  "files_touched_estimate": [
+    ".claude/commands/plan.md",
+    "AGENTS.md"
+  ],
+  "acceptance_criteria": [
+    ".claude/commands/plan.md step 2 references .agent/plan-interview.md as the interview to run.",
+    "AGENTS.md points operators at the interview guide from the /plan documentation."
+  ]
+}
