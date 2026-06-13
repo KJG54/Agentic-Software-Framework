@@ -195,6 +195,48 @@ test("handoff records test results and ready gates on them", { timeout: 30000 },
   assert.match(ok.stdout, /ready for human merge review/);
 });
 
+test("status derives merged-unreleased claims and orphaned branches", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run("git", ["init", "-b", "main"], fixture);
+  configureGitUser(fixture);
+  run("git", ["add", "."], fixture);
+  run("git", ["commit", "-m", "initial"], fixture);
+  run(process.execPath, [cliPath, "init-coordination"], fixture);
+
+  const coord = path.join(fixture, ".appbuilder", "coordination-worktree");
+  const taskPath = path.join(coord, "coordination", "queue", "TASK-001.json");
+  fs.writeFileSync(taskPath, JSON.stringify({
+    schema_version: "1.0",
+    id: "TASK-001",
+    title: "Update docs",
+    depends_on: [],
+    files_touched_estimate: ["docs/"]
+  }, null, 2));
+  run("git", ["add", "coordination/queue/TASK-001.json"], coord);
+  run("git", ["commit", "-m", "coordination: publish TASK-001"], coord);
+
+  const env = { ...process.env, APPBUILDER_AGENT_ID: "agent-test" };
+  run(process.execPath, [cliPath, "claim", "TASK-001"], fixture, env);
+
+  // Do the task work on its branch, then merge it into main while the claim
+  // file is still present -> the claim is merged but unreleased.
+  fs.writeFileSync(path.join(fixture, "docs", "note.md"), "# Note\n");
+  run("git", ["add", "docs/note.md"], fixture);
+  run("git", ["commit", "-m", "docs: add note"], fixture);
+  run("git", ["checkout", "main"], fixture);
+  run("git", ["merge", "--no-ff", "agent/TASK-001-update-docs", "-m", "merge TASK-001"], fixture);
+
+  // A leftover agent branch with no claim -> orphaned.
+  run("git", ["branch", "agent/TASK-999-orphan"], fixture);
+
+  const status = run(process.execPath, [cliPath, "status"], fixture, env);
+  const parsed = JSON.parse(status.stdout);
+  assert.deepEqual(parsed.merged_unreleased_claims.map((claim) => claim.id), ["TASK-001"]);
+  assert.equal(parsed.merged_unreleased_claims[0].owner, "agent-test");
+  assert(parsed.orphaned_branches.includes("agent/TASK-999-orphan"));
+  assert(!parsed.orphaned_branches.includes("agent/TASK-001-update-docs"), "claimed branch is not orphaned");
+});
+
 test("maybePush retries after remote moves and resets on conflicting race", { timeout: 60000 }, () => {
   const base = fs.mkdtempSync(path.join(os.tmpdir(), "appbuilder-race-"));
   const origin = path.join(base, "origin.git");
