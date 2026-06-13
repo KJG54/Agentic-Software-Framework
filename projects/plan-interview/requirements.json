@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "project": "plan-interview",
+  "summary": "Upgrade the App Builder /plan flow so its requirements step is a build-type-aware intake interview. Instead of thinly 'helping fill in requirements.json', the agent runs a structured, two-phase interview (universal triage, then a deep-dive tailored to the build-type) that gets to the root of what the operator wants to build, then synthesizes the answers into requirements.json and a first-draft task-plan.json with explicit confirm-back gates.",
+  "goals": [
+    "Make /plan reliably surface real requirements by interviewing the operator instead of assuming the idea is already well-formed.",
+    "Keep the interview self-contained in the App Builder skill layer with no dependency on third-party plugins (e.g. superpowers), so it works for both Claude Code and Codex operators.",
+    "Keep the appbuilder CLI LLM-free and deterministic: the interview is agent-thinking guided by a shared markdown script, not new CLI logic.",
+    "End the interview by producing a confirmed requirements.json and a first-draft task-plan.json that pass plan compile, with the human-approval gate before seed left intact."
+  ],
+  "features": [
+    {
+      "name": "Shared interview guide",
+      "description": "A single agent-agnostic markdown guide at .agent/plan-interview.md that holds the entire interview script. One source of truth referenced by both the /plan command and AGENTS.md."
+    },
+    {
+      "name": "Phase A universal triage",
+      "description": "Four questions every project gets, asked one at a time: what are you building (seeds summary), core outcome (seeds top goal), who uses it and in what context (constraints), and a build-type classifier (game / CLI tool / app / library / other) that routes to Phase B."
+    },
+    {
+      "name": "Phase B build-type deep-dives",
+      "description": "Tailored question sets per build-type: Game (core loop, win/lose, input, platform, art/audio scope), CLI tool (verbs, input/output contract, flags, exit codes, scripting use), App (users/roles, key flows, data model/persistence, platform), Library (public API, consumers, runtime, versioning/docs), plus a generic fallback (inputs, outputs, key operations, dependencies, done-criteria) for anything else."
+    },
+    {
+      "name": "Synthesis with confirm-back gates",
+      "description": "The interview does not write straight to disk. It synthesizes answers into a proposed requirements.json shown in plain language for operator confirmation, then proposes a first-draft task-plan.json (TASK-NNN, titles, files_touched_estimate, depends_on) for confirmation, before the existing compile and human-approval-before-seed gates resume."
+    },
+    {
+      "name": "Operator-surface wiring",
+      "description": "The /plan slash command, AGENTS.md, and HOWTO.md are updated to point at the interview guide so both Claude and Codex operators run the same script and humans can follow along."
+    },
+    {
+      "name": "Drift guard",
+      "description": "A doctor check and a test assert the interview guide exists and is referenced from the operator surfaces, so the wiring cannot silently rot."
+    }
+  ],
+  "constraints": [
+    "No LLM or idea-parsing logic added to cli/appbuilder.js; the CLI stays deterministic and zero-dependency.",
+    "No dependency on the superpowers plugin or any Claude-only mechanism for the interview content itself.",
+    "Purely additive to the existing plan new/compile/seed flow; the human-approval gate before seed is not bypassed.",
+    "The interview script must be readable and runnable by any agent (Claude Code or Codex) from the shared .agent guide."
+  ]
+}

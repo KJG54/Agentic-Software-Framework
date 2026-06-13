@@ -7,3 +7,8 @@ npm-debug.log*
 .DS_Store
 *.env
 .env
+
+# Local scratch notes (not part of the framework)
+Ideas for changes.md
+ideas for projects.md
+things to fix

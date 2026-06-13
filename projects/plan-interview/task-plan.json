@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "project": "plan-interview",
+  "tasks": [
+    {
+      "schema_version": "1.0",
+      "id": "TASK-201",
+      "title": "Author the shared build-type interview guide",
+      "description": "Create .agent/plan-interview.md containing the full interview script: Phase A universal triage (four one-at-a-time questions ending in a build-type classifier), Phase B deep-dive tracks for Game / CLI tool / App / Library plus a generic fallback, and the synthesis + confirm-back section that maps answers onto requirements.json fields (summary, goals, features, constraints) and a first-draft task-plan.json. Written agent-agnostically so Claude Code and Codex can both run it.",
+      "files_touched_estimate": [".agent/plan-interview.md"],
+      "depends_on": [],
+      "acceptance_criteria": [
+        ".agent/plan-interview.md exists with Phase A, Phase B (4 tracks + generic fallback), and synthesis/confirm-back sections.",
+        "Each Phase B track lists concrete questions and names the requirements.json field(s) it feeds.",
+        "The guide instructs the agent to confirm proposed requirements.json and task-plan.json with the operator before writing, and to stop for human approval before plan seed."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-202",
+      "title": "Wire the interview into the agent operator surfaces",
+      "description": "Update .claude/commands/plan.md step 2 to direct the agent to conduct the interview in .agent/plan-interview.md before writing artifacts; update the /plan row and slash-command section in AGENTS.md to reference the guide so Codex operators follow it. No behavior change to the CLI.",
+      "files_touched_estimate": [".claude/commands/plan.md", "AGENTS.md"],
+      "depends_on": ["TASK-201"],
+      "acceptance_criteria": [
+        ".claude/commands/plan.md step 2 references .agent/plan-interview.md as the interview to run.",
+        "AGENTS.md points operators at the interview guide from the /plan documentation."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-203",
+      "title": "Update HOWTO.md for human operators",
+      "description": "Update HOWTO.md so human operators know /plan now runs a build-type interview: describe the two-phase flow, what it produces, and the confirm-back gates, pointing at .agent/plan-interview.md for the full script.",
+      "files_touched_estimate": ["HOWTO.md"],
+      "depends_on": ["TASK-201"],
+      "acceptance_criteria": [
+        "HOWTO.md describes the interview behavior for human operators and points at the interview guide."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-204",
+      "title": "Add a drift guard (doctor check + test)",
+      "description": "Add a doctor check that .agent/plan-interview.md exists and is referenced from the operator surfaces, and a test in tests/appbuilder.test.js asserting the guide's presence and that the /plan command references it. Written test-first.",
+      "files_touched_estimate": ["cli/appbuilder.js", "tests/appbuilder.test.js"],
+      "depends_on": ["TASK-201", "TASK-202"],
+      "acceptance_criteria": [
+        "doctor reports an ok line when the interview guide exists and is referenced, and a fail line when it is missing or unreferenced.",
+        "A test asserts the guide exists and that .claude/commands/plan.md references it.",
+        "The full test suite passes."
+      ]
+    }
+  ]
+}
