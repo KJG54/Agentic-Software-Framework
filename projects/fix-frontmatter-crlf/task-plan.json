@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "project": "fix-frontmatter-crlf",
+  "tasks": [
+    {
+      "schema_version": "1.0",
+      "id": "TASK-301",
+      "title": "Make parseFrontmatter CRLF-tolerant and normalize line endings",
+      "description": "Fix the cross-platform defect where doctor falsely reports 'missing schema_version frontmatter' on Windows. parseFrontmatter in cli/appbuilder.js only accepts a leading '---\\n' delimiter, so git autocrlf (which rewrites files to CRLF on checkout) makes the parser bail. Make the delimiter check accept CRLF as well as LF, add a .gitattributes that normalizes tracked text artifacts (.md/.json) to LF so the rewrite stops happening, and add a regression test. Written test-first.",
+      "files_touched_estimate": ["cli/appbuilder.js", ".gitattributes", "tests/appbuilder.test.js"],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "parseFrontmatter returns schema_version for frontmatter that begins with a CRLF-terminated '---' delimiter.",
+        ".gitattributes normalizes tracked .md and .json artifacts to LF.",
+        "doctor passes on a Windows checkout of projects/*/architecture.md.",
+        "A new test covers CRLF frontmatter parsing and the full suite passes."
+      ]
+    }
+  ]
+}
