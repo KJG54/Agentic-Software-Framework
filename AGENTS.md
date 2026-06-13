@@ -75,12 +75,17 @@ run the CLI form directly — that is the universal interface.
 | --- | --- |
 | `/status` | `appbuilder status` |
 | `/doctor` | `appbuilder doctor` |
-| `/plan` | `appbuilder plan new <slug>` → fill artifacts → `plan compile <slug>` → `plan seed <slug>` |
+| `/plan` | `appbuilder plan new <slug>` → run the [build-type interview](.agent/plan-interview.md) → fill artifacts → `plan compile <slug>` → `plan seed <slug>` |
 | `/work <TASK>` | `appbuilder claim <TASK>` → implement test-first → `handoff --tests-run --tests-passed` → `ready <TASK>` → PR/merge → `release <TASK>` |
 
 Definitions live in `.claude/commands/` (Claude Code, auto-loaded per-project). Codex agents
 need no shortcuts — Codex auto-loads this `AGENTS.md`, so run the CLI verbs above directly.
 (Codex custom prompts are deprecated; a first-class Codex Skill is a possible future addition.)
+
+The `/plan` flow opens with a **build-type interview** — see
+[.agent/plan-interview.md](.agent/plan-interview.md). Both surfaces run the same script: Claude
+Code reaches it through `/plan`, Codex through this `/plan` row. Conduct the interview before
+writing `requirements.json`, and never seed without the human-approval gate.
 
 ## Detailed ruleset
 
