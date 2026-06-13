@@ -412,6 +412,26 @@ function doctor(cwd) {
     check("onboarding:CLAUDE.md", refsAgents, refsAgents ? "references AGENTS.md" : "present but does not reference AGENTS.md");
   }
 
+  // Plan-interview drift guard: the build-type interview is part of the /plan contract.
+  // The guide must exist and stay referenced from both operator surfaces, or /plan silently
+  // drifts back to "just fill in requirements" on whichever surface lost the link.
+  const interviewRel = ".agent/plan-interview.md";
+  const interviewExists = fs.existsSync(path.join(root, interviewRel));
+  check("plan-interview:guide", interviewExists, interviewExists ? "exists" : `${interviewRel} missing`);
+  const surfaces = [
+    { name: "plan-interview:plan.md", file: path.join(".claude", "commands", "plan.md") },
+    { name: "plan-interview:AGENTS.md", file: "AGENTS.md" }
+  ];
+  for (const { name, file } of surfaces) {
+    const surfacePath = path.join(root, file);
+    if (!fs.existsSync(surfacePath)) {
+      check(name, false, `${file} missing`);
+      continue;
+    }
+    const refs = fs.readFileSync(surfacePath, "utf8").includes("plan-interview.md");
+    check(name, refs, refs ? `references ${interviewRel}` : `present but does not reference ${interviewRel}`);
+  }
+
   const gitOk = isGitRepo(root);
   check("git-repository", gitOk, gitOk ? "inside worktree" : "not a Git repository");
   if (gitOk && project) {
