@@ -72,15 +72,15 @@ Humans and supported agents get these shortcuts; they wrap the CLI verbs below. 
 run the CLI form directly — that is the universal interface.
 
 | Command | CLI equivalent |
-|---------|----------------|
+| --- | --- |
 | `/status` | `appbuilder status` |
 | `/doctor` | `appbuilder doctor` |
 | `/plan` | `appbuilder plan new <slug>` → fill artifacts → `plan compile <slug>` → `plan seed <slug>` |
 | `/work <TASK>` | `appbuilder claim <TASK>` → implement test-first → `handoff --tests-run --tests-passed` → `ready <TASK>` → PR/merge → `release <TASK>` |
 
-Definitions live in `.claude/commands/` (Claude Code, auto-loaded per-project) and
-`.codex/prompts/` (Codex — see [.codex/prompts/README.md](.codex/prompts/README.md); Codex
-discovers prompts from `~/.codex/prompts/`, so copy them there to use the shortcuts).
+Definitions live in `.claude/commands/` (Claude Code, auto-loaded per-project). Codex agents
+need no shortcuts — Codex auto-loads this `AGENTS.md`, so run the CLI verbs above directly.
+(Codex custom prompts are deprecated; a first-class Codex Skill is a possible future addition.)
 
 ## Detailed ruleset
 
