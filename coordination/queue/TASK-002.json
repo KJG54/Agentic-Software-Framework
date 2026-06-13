@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-002",
+  "title": "Record real test results in handoffs",
+  "description": "Handoffs currently hardcode tests_run: false. Run the project test command (npm test) during handoff, or accept a --tests-run/--tests-passed flag, and record the actual result in the handoff frontmatter so downstream agents and ready can trust it.",
+  "depends_on": [],
+  "files_touched_estimate": ["cli/appbuilder.js", "tests/appbuilder.test.js", "contracts/schemas/v1/handoff.schema.json"],
+  "acceptance_criteria": [
+    "handoff frontmatter reflects whether tests were actually run and their outcome",
+    "ready surfaces a failure or warning when the latest handoff reports failing or skipped tests",
+    "schema for handoff updated if new fields are added, with example kept in sync"
+  ]
+}

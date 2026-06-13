@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-005",
+  "title": "Auto-sync coordination state and recover from lost claim races",
+  "description": "Coordination commands read the internal worktree without fetching first, and a push rejected by the remote leaves the worktree wedged with the losing commit (observed in the TASK-101 demo). Fetch and replay the coordination worktree against origin before reading state, and on push rejection rebase-and-retry once; if the rebase conflicts (a true race, e.g. two claims for the same task), reset the worktree to origin and fail with an error naming the winning owner. No manual git surgery should ever be required.",
+  "depends_on": [],
+  "files_touched_estimate": ["cli/appbuilder.js", "tests/appbuilder.test.js"],
+  "acceptance_criteria": [
+    "coordination commands fetch and fast-forward/rebase the worktree from origin before reading state when a remote exists; offline keeps local-first behavior",
+    "a push rejected because the remote moved is retried after a clean rebase and succeeds when commits do not conflict",
+    "a conflicting race resets the worktree to origin/coordination-branch automatically and claim reports the remote owner",
+    "tests cover fetch-first claim rejection across two clones and both rebase-retry and conflict-reset push paths"
+  ]
+}

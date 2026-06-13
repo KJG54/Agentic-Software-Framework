@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-101",
+  "title": "Demo: prove the two-agent coordination loop",
+  "description": "End-to-end proof that two agents on separate checkouts coordinate through coordination/main on GitHub: claim arbitration, overlap/conflict rejection, handoff, ready, and release. Deliverable is docs/coordination-demo.md recording the run.",
+  "depends_on": [],
+  "files_touched_estimate": ["docs/coordination-demo.md"],
+  "acceptance_criteria": [
+    "a second agent on a fresh clone claims this task and the first agent's claim attempt is rejected",
+    "docs/coordination-demo.md written on the task branch and handed off complete",
+    "claim file deleted on release and status reflects it on both checkouts"
+  ]
+}

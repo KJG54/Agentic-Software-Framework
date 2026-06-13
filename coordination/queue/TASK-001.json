@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-001",
+  "title": "Guard expired-claim reclaim in claim command",
+  "description": "claim() currently lets a new agent silently overwrite an expired claim. Per spec, an expired claim must first be reaped via `release --expired --reason <text>` so the takeover is an explicit, audited event. Make claim() refuse to claim a task whose claim file exists but is expired, with an error directing the agent to release --expired first.",
+  "depends_on": [],
+  "files_touched_estimate": ["cli/appbuilder.js", "tests/appbuilder.test.js"],
+  "acceptance_criteria": [
+    "claim on a task with an expired claim fails with an error mentioning release --expired",
+    "claim succeeds after the expired claim is reaped via release --expired --reason",
+    "existing test suite stays green and a new test covers the guard"
+  ]
+}
