@@ -46,6 +46,86 @@ test("scaffold-report validation requires the core report fields", () => {
   assert(bad.errors.some((item) => item.includes("template") || item.includes("required")));
 });
 
+test("build-manifest validation enforces task ids, status enum, and structure", () => {
+  const good = cli.validateBuildManifest({
+    schema_version: "1.0",
+    project: "demo",
+    tasks: [
+      { id: "TASK-001", status: "pending", files: [], reason: "" },
+      { id: "TASK-002", status: "done", files: ["src/index.js"], reason: "" },
+      { id: "TASK-003", status: "skipped", files: [], reason: "deferred" }
+    ]
+  }, repoRoot);
+  assert.equal(good.ok, true, (good.errors || []).join("; "));
+
+  // tasks is required.
+  const noTasks = cli.validateBuildManifest({ schema_version: "1.0", project: "demo" }, repoRoot);
+  assert.equal(noTasks.ok, false);
+  assert(noTasks.errors.some((item) => item.includes("tasks") || item.includes("required")));
+
+  // status must be one of the allowed values.
+  const badStatus = cli.validateBuildManifest({
+    schema_version: "1.0",
+    project: "demo",
+    tasks: [{ id: "TASK-001", status: "wip", files: [], reason: "" }]
+  }, repoRoot);
+  assert.equal(badStatus.ok, false);
+
+  // a task must carry an id.
+  const noId = cli.validateBuildManifest({
+    schema_version: "1.0",
+    project: "demo",
+    tasks: [{ status: "pending" }]
+  }, repoRoot);
+  assert.equal(noId.ok, false);
+});
+
+test("build-report validation requires the core report fields", () => {
+  const good = cli.validateBuildReport({
+    schema_version: "1.0",
+    project: "demo",
+    generated_at: new Date().toISOString(),
+    tasks_total: 3,
+    tasks_done: 2,
+    tasks_skipped: 1,
+    files_touched: ["src/index.js"]
+  }, repoRoot);
+  assert.equal(good.ok, true, (good.errors || []).join("; "));
+
+  // missing counts fail.
+  const bad = cli.validateBuildReport({
+    schema_version: "1.0",
+    project: "demo",
+    generated_at: new Date().toISOString()
+  }, repoRoot);
+  assert.equal(bad.ok, false);
+
+  // counts cannot be negative.
+  const negative = cli.validateBuildReport({
+    schema_version: "1.0",
+    project: "demo",
+    generated_at: new Date().toISOString(),
+    tasks_total: -1,
+    tasks_done: 0,
+    tasks_skipped: 0,
+    files_touched: []
+  }, repoRoot);
+  assert.equal(negative.ok, false);
+
+  // unexpected properties are rejected (additionalProperties: false).
+  const extra = cli.validateBuildReport({
+    schema_version: "1.0",
+    project: "demo",
+    generated_at: new Date().toISOString(),
+    tasks_total: 0,
+    tasks_done: 0,
+    tasks_skipped: 0,
+    files_touched: [],
+    surprise: true
+  }, repoRoot);
+  assert.equal(extra.ok, false);
+});
+
 test("cli template manifest is valid and its required_files exist", () => {
   const templateDir = path.join(repoRoot, "templates", "cli");
   const manifest = JSON.parse(fs.readFileSync(path.join(templateDir, "template.json"), "utf8"));

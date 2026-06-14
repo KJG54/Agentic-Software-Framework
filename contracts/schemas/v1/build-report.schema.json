@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://app-builder.local/contracts/schemas/v1/build-report.schema.json",
+  "title": "Build Report",
+  "type": "object",
+  "required": ["schema_version", "project", "generated_at", "tasks_total", "tasks_done", "tasks_skipped", "files_touched"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "project": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "tasks_total": { "type": "integer", "minimum": 0 },
+    "tasks_done": { "type": "integer", "minimum": 0 },
+    "tasks_skipped": { "type": "integer", "minimum": 0 },
+    "files_touched": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "additionalProperties": false
+}
