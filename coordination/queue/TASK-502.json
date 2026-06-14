@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-502",
+  "title": "Add scaffold-report schema and register it in doctor",
+  "description": "Add contracts/schemas/v1/scaffold-report.schema.json (schema_version, project, build_type, template, generated_at, output_dir, rendered_files) and add 'scaffold-report' to REQUIRED_SCHEMA_NAMES in cli/appbuilder.js so doctor verifies the schema file exists. Test-first.",
+  "depends_on": [],
+  "files_touched_estimate": [
+    "contracts/schemas/v1/scaffold-report.schema.json",
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "scaffold-report.schema.json exists and validates a well-formed report object.",
+    "'scaffold-report' is in REQUIRED_SCHEMA_NAMES and doctor passes with the schema present.",
+    "A test validates a sample report against the schema; full suite passes."
+  ]
+}

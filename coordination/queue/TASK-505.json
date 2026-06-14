@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-505",
+  "title": "Document the scaffold phase",
+  "description": "Update README.md and HOWTO.md to document appbuilder scaffold: the build_type field, build/<slug>/ output, scaffold-report.json, and the loop position plan -> scaffold -> build. Docs only.",
+  "depends_on": [
+    "TASK-504"
+  ],
+  "files_touched_estimate": [
+    "README.md",
+    "HOWTO.md"
+  ],
+  "acceptance_criteria": [
+    "README.md and HOWTO.md describe the scaffold command, build_type, build/<slug>/ output, and the loop position.",
+    "No scaffold workflow placeholder language remains where the command is now real.",
+    "Full suite passes (docs-only change)."
+  ]
+}

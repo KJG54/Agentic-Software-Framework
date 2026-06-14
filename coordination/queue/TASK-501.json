@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-501",
+  "title": "Add optional enum-constrained build_type to requirements schema",
+  "description": "Add an optional build_type property to contracts/schemas/v1/requirements.schema.json, enum [game, cli, app, library, other]. The custom validator already enforces enum, so plan compile rejects an out-of-enum build_type while accepting requirements with no build_type. Test-first.",
+  "depends_on": [],
+  "files_touched_estimate": [
+    "contracts/schemas/v1/requirements.schema.json",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "requirements.schema.json declares build_type as optional, enum-constrained to [game, cli, app, library, other].",
+    "plan compile rejects a requirements.json whose build_type is outside the enum, and still accepts one with no build_type.",
+    "A test covers both the valid-omitted and invalid-value cases; full suite passes."
+  ]
+}

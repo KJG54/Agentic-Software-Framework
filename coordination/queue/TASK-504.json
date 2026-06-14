@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-504",
+  "title": "Implement the scaffold command",
+  "description": "Add cli/lib/scaffold.js and dispatch `appbuilder scaffold <slug> [--force]` from the router (replacing the placeholder). Gate on compilePlan, require build_type present with an available template, copy templates/<build_type>/files/ into build/<slug>/ with {{variable}} substitution, assert required_files were produced, write+validate build/<slug>/scaffold-report.json. Scope the test runner to tests/ so generated stubs are not discovered. Refuse to overwrite build/<slug>/ unless --force. Test-first.",
+  "depends_on": [
+    "TASK-501",
+    "TASK-502",
+    "TASK-503"
+  ],
+  "files_touched_estimate": [
+    "cli/lib/scaffold.js",
+    "cli/appbuilder.js",
+    "package.json",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "appbuilder scaffold <slug> renders templates/cli into build/<slug>/ with {{slug}}/{{summary}} substituted, and writes a valid scaffold-report.json.",
+    "scaffold gates on compile and fails clearly when build_type is missing or has no template; refuses an existing build/<slug>/ without --force and overwrites with it.",
+    "scripts.test is scoped to tests/ so generated build/<slug>/test stubs are not run; full suite passes and doctor is green."
+  ]
+}

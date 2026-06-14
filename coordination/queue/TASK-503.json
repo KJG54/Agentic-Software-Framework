@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-503",
+  "title": "Author the cli build-type template",
+  "description": "Create templates/cli/template.json (valid against template.schema.json, listing required_files) and templates/cli/files/ with package.json, README.md, .gitignore, src/index.js, test/index.test.js using {{slug}} and {{summary}} placeholders. Content authoring; a test asserts the manifest is valid and required_files match the files/ tree.",
+  "depends_on": [],
+  "files_touched_estimate": [
+    "templates/cli/template.json",
+    "templates/cli/files/package.json",
+    "templates/cli/files/README.md",
+    "templates/cli/files/.gitignore",
+    "templates/cli/files/src/index.js",
+    "templates/cli/files/test/index.test.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "templates/cli/template.json validates against template.schema.json and lists required_files.",
+    "templates/cli/files/ contains the listed files, using only the documented {{slug}}/{{summary}} placeholders.",
+    "A test asserts the manifest is valid and required_files match the files/ tree; full suite passes."
+  ]
+}
