@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-606",
+  "title": "Document templates and the dir-driven build_type",
+  "description": "Add an 'authoring a template' recipe (folder layout, template.json contract, the {{slug}}/{{summary}} variables, required_files, 'a folder is all it takes'). Update HOWTO.md and README.md scaffold sections to mention `appbuilder templates` and the open build_type, and update .agent/plan-interview.md to point at the live `appbuilder templates` list instead of a hardcoded enum. Docs only.",
+  "depends_on": [
+    "TASK-601",
+    "TASK-605"
+  ],
+  "files_touched_estimate": [
+    "HOWTO.md",
+    "README.md",
+    ".agent/plan-interview.md",
+    "templates/README.md"
+  ],
+  "acceptance_criteria": [
+    "A template-authoring recipe documents the folder layout, manifest contract, substitution variables, and required_files.",
+    "HOWTO.md/README.md mention `appbuilder templates` and the dir-driven build_type; .agent/plan-interview.md points at the live list rather than a fixed enum.",
+    "No stale 'no template for X yet' or closed-enum language remains where it is now wrong; full suite passes (docs-only change)."
+  ]
+}

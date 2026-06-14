@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-604",
+  "title": "Author the game build-type template",
+  "description": "Create templates/game/template.json and templates/game/files/: package.json (name {{slug}}, test script), README.md, .gitignore, src/game.js with a pure step(state, input) reducer and an initialState, src/index.js wiring the reducer to a stdin loop, test/game.test.js exercising the pure reducer. Only {{slug}}/{{summary}} placeholders; only node: built-ins. A test renders the template and asserts required_files + valid report.",
+  "depends_on": [],
+  "files_touched_estimate": [
+    "templates/game/template.json",
+    "templates/game/files/package.json",
+    "templates/game/files/README.md",
+    "templates/game/files/.gitignore",
+    "templates/game/files/src/game.js",
+    "templates/game/files/src/index.js",
+    "templates/game/files/test/game.test.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "templates/game/template.json validates against template.schema.json and lists its required_files.",
+    "Scaffolding build_type=game renders the files/ tree with placeholders substituted and writes a valid scaffold-report.json.",
+    "The pure reducer test passes under node --test (no TTY needed); full suite passes."
+  ]
+}

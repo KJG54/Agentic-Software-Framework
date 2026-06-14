@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-603",
+  "title": "Author the app build-type template",
+  "description": "Create templates/app/template.json and templates/app/files/: package.json (name {{slug}}, start script 'node src/server.js', test script), README.md, .gitignore, src/server.js exporting a request handler and a start(port) helper using node:http, test/server.test.js that binds an ephemeral port (listen(0)), makes one request and asserts the response. Only {{slug}}/{{summary}} placeholders; only node: built-ins. A test renders the template and asserts required_files + valid report.",
+  "depends_on": [],
+  "files_touched_estimate": [
+    "templates/app/template.json",
+    "templates/app/files/package.json",
+    "templates/app/files/README.md",
+    "templates/app/files/.gitignore",
+    "templates/app/files/src/server.js",
+    "templates/app/files/test/server.test.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "templates/app/template.json validates against template.schema.json and lists its required_files.",
+    "Scaffolding build_type=app renders the files/ tree with placeholders substituted and writes a valid scaffold-report.json.",
+    "The rendered server test binds an ephemeral port and passes under node --test with zero dependencies; full suite passes."
+  ]
+}

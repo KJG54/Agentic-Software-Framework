@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-602",
+  "title": "Author the library build-type template",
+  "description": "Create templates/library/template.json (valid against template.schema.json, required_files listed) and templates/library/files/: package.json (name {{slug}}, main src/index.js, no bin, test script), README.md, .gitignore, src/index.js exporting a sample function, test/index.test.js exercising it. Only {{slug}}/{{summary}} placeholders; only node: built-ins. A test renders the template into a temp project and asserts required_files are produced and the report validates.",
+  "depends_on": [],
+  "files_touched_estimate": [
+    "templates/library/template.json",
+    "templates/library/files/package.json",
+    "templates/library/files/README.md",
+    "templates/library/files/.gitignore",
+    "templates/library/files/src/index.js",
+    "templates/library/files/test/index.test.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "templates/library/template.json validates against template.schema.json and lists its required_files.",
+    "Scaffolding build_type=library renders the files/ tree with {{slug}}/{{summary}} substituted and writes a valid scaffold-report.json.",
+    "The rendered test/index.test.js passes under node --test; a framework test covers the render; full suite passes."
+  ]
+}

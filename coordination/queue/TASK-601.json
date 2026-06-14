@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-601",
+  "title": "Make build_type dir-driven (loosen the schema enum)",
+  "description": "Change build_type in contracts/schemas/v1/requirements.schema.json from the closed enum [game,cli,app,library,other] to a format-validated slug string (pattern ^[a-z0-9][a-z0-9-]*$, optional). The templates/ directory plus scaffold's existing 'no template for build_type' error remain the real gate. Verify the custom validator enforces the pattern (and drop any enum special-casing in cli/lib/validate.js if present). Test-first.",
+  "depends_on": [],
+  "files_touched_estimate": [
+    "contracts/schemas/v1/requirements.schema.json",
+    "cli/lib/validate.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "build_type is declared as an optional slug-pattern string; the closed enum is gone.",
+    "plan compile accepts a valid slug build_type (e.g. cli, library) and a requirements.json with no build_type, and rejects a malformed value (e.g. \"Not A Slug\").",
+    "Existing cli and scaffold-phase requirements still validate; a test covers valid/omitted/invalid cases; full suite passes."
+  ]
+}

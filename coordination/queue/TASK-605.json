@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-605",
+  "title": "Add the `appbuilder templates` discovery command",
+  "description": "Add cli/lib/templates.js exporting listTemplates(cwd) that scans templates/*/template.json, and dispatch `appbuilder templates [--json]` from the router. Default output is a human-readable list of id / name / description; --json emits the structured list (matching the status command pattern). Skips non-template entries (e.g. .gitkeep) gracefully. Test-first.",
+  "depends_on": [
+    "TASK-602",
+    "TASK-603",
+    "TASK-604"
+  ],
+  "files_touched_estimate": [
+    "cli/lib/templates.js",
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "appbuilder templates lists every templates/<id>/ with a valid manifest (cli, library, app, game) showing id, name, description.",
+    "appbuilder templates --json emits a valid structured list; both modes ignore .gitkeep and malformed entries without crashing.",
+    "A test asserts the command lists the known templates in both modes; full suite passes and doctor is green."
+  ]
+}
