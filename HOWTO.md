@@ -16,14 +16,16 @@ editing files directly.
 - Git 2.x+ with at least one commit in the repo
 
 ```bash
-appbuilder doctor          # check the environment and framework layout
-node --test                # run the test suite (canonical, cross-platform)
+appbuilder doctor                  # check the environment and framework layout
+node --test "tests/**/*.test.js"   # run the test suite (canonical, cross-platform)
 ```
 
-> **Running the tests:** `node --test` is the canonical command and works the same on every
-> platform. On Windows, prefer it over `npm test` — PowerShell's execution policy can block the
-> `npm.ps1` shim with an error like *"running scripts is disabled on this system"*. If you'd
-> rather use the npm script, `npm.cmd test` invokes it from PowerShell without tripping that.
+> **Running the tests:** `node --test "tests/**/*.test.js"` is the canonical command and works
+> the same on every platform. The glob scopes the runner to the framework's own tests under
+> `tests/`, so generated template stubs (e.g. `build/<slug>/test/*.test.js` produced by
+> `scaffold`) are never discovered and run. `npm test` runs the same command. On Windows, prefer
+> `node --test` over `npm test` — PowerShell's execution policy can block the `npm.ps1` shim with
+> an error like *"running scripts is disabled on this system"*; `npm.cmd test` also works.
 
 ## 1. One-time setup
 
@@ -85,7 +87,38 @@ the queue are skipped (printed as `skip seed: TASK-00X already exists`) — neve
 > Note: task ids are global `TASK-NNN` for now, so they can collide across projects. The `skip`
 > lines make that visible; a per-project id scheme is a future improvement.
 
-## 3. How work gets done
+## 3. Scaffold the skeleton (plan → `build/<slug>`)
+
+Once a plan is approved, `scaffold` turns it into a runnable project skeleton:
+
+```bash
+appbuilder scaffold my-app          # render into build/my-app
+appbuilder scaffold my-app --force  # overwrite an existing build/my-app
+```
+
+What it does — deterministically, with **no LLM**:
+
+- Reads `requirements.build_type` (one of `game`, `cli`, `app`, `library`, `other`; the
+  build-type interview sets it, and `plan compile` validates the enum) and picks the matching
+  template from `templates/`.
+- Gates on `plan compile` first — a project is only scaffolded once its plan is valid.
+- Copies the template's file tree into `build/<slug>/`, substituting `{{slug}}` and `{{summary}}`
+  from `requirements.json` into file contents.
+- Writes a machine-readable `build/<slug>/scaffold-report.json` (build_type, template, the list
+  of rendered files) for the next phase to consume.
+
+```text
+build/my-app/
+  package.json  README.md  .gitignore
+  src/index.js  test/index.test.js
+  scaffold-report.json
+```
+
+Generated code lives under `build/<slug>/` (tracked) — separate from the plan artifacts in
+`projects/<slug>/`. A `cli` template ships today; `game`/`app`/`library` arrive in later slices,
+so `scaffold` reports a clear "no template for build_type X yet" until then.
+
+## 4. How work gets done
 
 Once tasks are in the queue, an agent (or you) runs the coordination loop per task:
 
@@ -125,6 +158,5 @@ Codex agents don't get the shortcuts but auto-load the same workflow from [AGENT
 
 ## Later phases
 
-`start`, `scaffold`, `build`, `test`, `review`, and `ship` are placeholders today. They will
-fill in the rest of the loop (`plan → scaffold → build → test → review → ship`) in future
-slices.
+`start`, `build`, `test`, `review`, and `ship` are placeholders today. They will fill in the
+rest of the loop (`plan → scaffold → build → test → review → ship`) in future slices.
