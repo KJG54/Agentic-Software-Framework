@@ -64,7 +64,8 @@ function scaffold(cwd, args = []) {
   if (!buildType) {
     throw new Error(
       `scaffold requires requirements.build_type for ${slug}. ` +
-      `Set a build_type (game|cli|app|library|other) in projects/${slug}/requirements.json.`
+      `Set a build_type matching a template under templates/ (run appbuilder templates) ` +
+      `in projects/${slug}/requirements.json.`
     );
   }
 
