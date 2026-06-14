@@ -101,6 +101,10 @@ appbuilder release TASK-001 --reason "merged via PR #N"     # free the claim
 The human stays in the loop at two points: approving the plan before `seed`, and reviewing each
 PR before merge.
 
+> Sizing tip: a task's `files_touched_estimate` is also its size class — 1–2 files is small,
+> 6+ is a hint to split it in the plan. See [.agent/rules/token-use.md](.agent/rules/token-use.md)
+> for the per-session, weekly, and handoff-compression budgeting heuristics agents follow.
+
 ## Slash commands (Claude Code)
 
 In a Claude Code session opened in this repo, these shortcuts wrap the CLI verbs above. They
