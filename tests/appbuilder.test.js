@@ -575,6 +575,36 @@ test("scaffold renders the library template into a working module", { timeout: 3
   assert.equal(rendered.status, 0, rendered.stdout + rendered.stderr);
 });
 
+test("scaffold renders the app template into a working http service", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  const projectDir = path.join(fixture, "projects", "demo-app");
+  writeFilledPlan(projectDir, { build_type: "app" });
+
+  const result = run(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
+  assert.match(result.stdout, /scaffolded demo-app/);
+
+  const buildDir = path.join(fixture, "build", "demo-app");
+  // An app has a start script, not a bin.
+  const pkg = JSON.parse(fs.readFileSync(path.join(buildDir, "package.json"), "utf8"));
+  assert.equal(pkg.name, "demo-app");
+  assert.match(pkg.scripts.start, /server\.js/);
+  const serverSrc = fs.readFileSync(path.join(buildDir, "src", "server.js"), "utf8");
+  assert.doesNotMatch(serverSrc, /\{\{\w+\}\}/);
+
+  // Report reflects the app template and is schema-valid.
+  const report = JSON.parse(fs.readFileSync(path.join(buildDir, "scaffold-report.json"), "utf8"));
+  assert.equal(report.build_type, "app");
+  assert.equal(report.template, "app");
+  assert(report.rendered_files.includes("src/server.js"));
+  assert(report.rendered_files.includes("test/server.test.js"));
+  assert.equal(cli.validateScaffoldReport(report, fixture).ok, true);
+
+  // The rendered service ships a passing test that binds an ephemeral port.
+  const rendered = spawnSync(process.execPath, ["--test", "test/server.test.js"], { cwd: buildDir, encoding: "utf8", stdio: "pipe" });
+  assert.equal(rendered.status, 0, rendered.stdout + rendered.stderr);
+});
+
 test("scaffold fails when build_type is missing or has no template", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
@@ -585,8 +615,9 @@ test("scaffold fails when build_type is missing or has no template", { timeout: 
   const noType = runFail(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
   assert.match(noType.stdout + noType.stderr, /build_type/);
 
-  // Valid enum build_type with no authored template -> scaffold refuses.
-  writeFilledPlan(projectDir, { build_type: "app" });
+  // A well-formed build_type with no authored template -> scaffold refuses.
+  // "other" is the intentional catch-all that never gets a template.
+  writeFilledPlan(projectDir, { build_type: "other" });
   const noTemplate = runFail(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
   assert.match(noTemplate.stdout + noTemplate.stderr, /template/i);
 });
