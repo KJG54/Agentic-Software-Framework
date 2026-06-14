@@ -29,6 +29,22 @@ test("validation dispatches by declared schema version", () => {
   assert(result.errors.some((item) => item.includes("schema_version 2.0")));
 });
 
+test("scaffold-report validation requires the core report fields", () => {
+  const good = cli.validateScaffoldReport({
+    schema_version: "1.0",
+    project: "demo",
+    build_type: "cli",
+    template: "cli",
+    generated_at: new Date().toISOString(),
+    output_dir: "build/demo",
+    rendered_files: ["package.json", "src/index.js"]
+  }, repoRoot);
+  assert.equal(good.ok, true, (good.errors || []).join("; "));
+  const bad = cli.validateScaffoldReport({ schema_version: "1.0", project: "demo", build_type: "cli" }, repoRoot);
+  assert.equal(bad.ok, false);
+  assert(bad.errors.some((item) => item.includes("template") || item.includes("required")));
+});
+
 test("frontmatter parser preserves list values", () => {
   const markdown = `---
 schema_version: "1.0"

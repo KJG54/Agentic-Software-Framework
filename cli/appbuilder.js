@@ -25,6 +25,7 @@ const {
   validateQueueTask,
   validateClaim,
   validateHandoff,
+  validateScaffoldReport,
   parseFrontmatter
 } = require("./lib/validate");
 const {
@@ -42,7 +43,7 @@ const {
 } = require("./lib/coordination");
 const { plan } = require("./lib/plan");
 
-const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan"];
+const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report"];
 
 function main(argv = process.argv.slice(2), cwd = process.cwd()) {
   const command = argv[0] || "help";
@@ -288,6 +289,7 @@ module.exports = {
   validateQueueTask,
   validateClaim,
   validateHandoff,
+  validateScaffoldReport,
   parseFrontmatter,
   buildHandoffMarkdown,
   pathsOverlap,
