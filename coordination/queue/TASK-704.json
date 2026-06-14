@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-704",
+  "title": "Document the build phase",
+  "description": "Give operators a thorough walkthrough of the build phase in HOWTO.md (both verbs, the build-manifest the agent fills in, the status vocabulary, every failure mode, and where build sits in the loop), update README.md (Build section + loop description), and polish the CLI help text. No code/behavior changes.",
+  "depends_on": [
+    "TASK-702",
+    "TASK-703"
+  ],
+  "files_touched_estimate": [
+    "HOWTO.md",
+    "README.md",
+    "cli/appbuilder.js"
+  ],
+  "acceptance_criteria": [
+    "HOWTO.md has a dedicated build-phase section as thorough as the scaffold section.",
+    "README.md describes build init and build and no longer lists build as a placeholder.",
+    "appbuilder help text documents both build verbs."
+  ]
+}

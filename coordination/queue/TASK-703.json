@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-703",
+  "title": "Implement the appbuilder build validation gate",
+  "description": "In cli/lib/build.js, implement the default build(cwd, slug) gate: manifest exists and is schema-valid; manifest ids exactly match task-plan ids; no task pending; each done task lists >=1 file that exists under build/<slug>/; each skipped task has a non-empty reason; scaffold-report rendered_files still exist. On pass, write a schema-valid build/<slug>/build-report.json (counts + sorted files_touched). On failure, print fail build: lines, exit 1, write nothing. Test-first.",
+  "depends_on": [
+    "TASK-701",
+    "TASK-702"
+  ],
+  "files_touched_estimate": [
+    "cli/lib/build.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "A fully-done manifest passes and writes a schema-valid build-report.json.",
+    "pending tasks, missing declared files, reasonless skips, mismatched ids, and deleted scaffold files each fail the gate with a clear message and no report written."
+  ]
+}

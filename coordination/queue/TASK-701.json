@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-701",
+  "title": "Define the build-manifest and build-report contracts",
+  "description": "Add contracts/schemas/v1/build-manifest.schema.json (required schema_version/project/tasks; each task requires id + status enum pending|done|skipped, with files array and reason string) and build-report.schema.json (required schema_version/project/generated_at/tasks_total/tasks_done/tasks_skipped/files_touched; counts integer minimum 0; additionalProperties false). Add validateBuildManifest/validateBuildReport to cli/lib/validate.js and register both schema names in REQUIRED_SCHEMA_NAMES. Test-first.",
+  "depends_on": [],
+  "files_touched_estimate": [
+    "contracts/schemas/v1/build-manifest.schema.json",
+    "contracts/schemas/v1/build-report.schema.json",
+    "cli/lib/validate.js",
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "Both schemas exist under contracts/schemas/v1 and load via the existing validator.",
+    "validateBuildManifest and validateBuildReport are exported and tested (valid + invalid cases).",
+    "doctor still passes with both new schema names registered."
+  ]
+}

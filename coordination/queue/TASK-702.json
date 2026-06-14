@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-702",
+  "title": "Implement appbuilder build init",
+  "description": "Create cli/lib/build.js exporting build(cwd, args). Implement the init subcommand: gate on build/<slug>/scaffold-report.json existing, read the compiled task-plan, and write build/<slug>/build-manifest.json with every task pre-listed as status pending (empty files, empty reason). Refuse to overwrite without --force. Wire the router case \"build\" to build(cwd, args) and update help text. Test-first.",
+  "depends_on": [
+    "TASK-701"
+  ],
+  "files_touched_estimate": [
+    "cli/lib/build.js",
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "build init <slug> writes a schema-valid manifest with one pending entry per plan task.",
+    "build init fails clearly when scaffold-report.json is absent.",
+    "build init refuses to overwrite an existing manifest without --force."
+  ]
+}
