@@ -438,6 +438,40 @@ test("plan compile gates on filled requirements and a consistent task plan", { t
   assert.match(dangling.stdout + dangling.stderr, /TASK-999|depends_on/);
 });
 
+test("compile rejects an out-of-enum build_type and accepts a known one", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  const projectDir = path.join(fixture, "projects", "demo-app");
+  const requirementsPath = path.join(projectDir, "requirements.json");
+  const taskPlanPath = path.join(projectDir, "task-plan.json");
+  const requirementsWith = (extra) => JSON.stringify({
+    schema_version: "1.0",
+    project: "demo-app",
+    summary: "A small demo app.",
+    goals: ["Ship a working slice"],
+    features: [{ name: "core", description: "the core feature" }],
+    constraints: [],
+    ...extra
+  }, null, 2);
+  fs.writeFileSync(taskPlanPath, JSON.stringify({
+    schema_version: "1.0",
+    project: "demo-app",
+    tasks: [
+      { schema_version: "1.0", id: "TASK-001", title: "Build core", files_touched_estimate: ["cli/"], depends_on: [] }
+    ]
+  }, null, 2));
+
+  // An out-of-enum build_type is rejected at compile.
+  fs.writeFileSync(requirementsPath, requirementsWith({ build_type: "banana" }));
+  const bad = runFail(process.execPath, [cliPath, "plan", "compile", "demo-app"], fixture);
+  assert.match(bad.stdout + bad.stderr, /build_type/);
+
+  // A known build_type compiles.
+  fs.writeFileSync(requirementsPath, requirementsWith({ build_type: "cli" }));
+  const ok = run(process.execPath, [cliPath, "plan", "compile", "demo-app"], fixture);
+  assert.match(ok.stdout, /passed/);
+});
+
 test("plan seed publishes tasks and skips ids already in the queue", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   run("git", ["init", "-b", "main"], fixture);
