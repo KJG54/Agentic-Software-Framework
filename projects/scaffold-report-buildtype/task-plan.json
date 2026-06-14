@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "project": "scaffold-report-buildtype",
+  "tasks": [
+    {
+      "schema_version": "1.0",
+      "id": "TASK-705",
+      "title": "Decouple scaffold-report build_type from the fixed enum (dir-driven)",
+      "description": "Replace the build_type enum in scaffold-report.schema.json with the same slug pattern requirements.schema.json uses, drop the hardcoded enum from the scaffold.js error message, and add a regression test that scaffolds a novel build_type and asserts its report validates.",
+      "files_touched_estimate": [
+        "contracts/schemas/v1/scaffold-report.schema.json",
+        "cli/lib/scaffold.js",
+        "tests/appbuilder.test.js"
+      ],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "scaffold-report.schema.json validates build_type as { type: string, pattern: ^[a-z0-9][a-z0-9-]* }, not an enum.",
+        "A project with a build_type outside the old enum scaffolds and its scaffold-report.json passes validation.",
+        "The missing-build_type error in scaffold.js no longer lists (game|cli|app|library|other).",
+        "Full suite passes: node --test \"tests/**/*.test.js\"."
+      ]
+    }
+  ]
+}

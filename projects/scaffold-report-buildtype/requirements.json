@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "project": "scaffold-report-buildtype",
+  "summary": "Decouple the scaffold-report schema's build_type from a fixed enum so the scaffold phase is genuinely dir-driven: any template folder under templates/ that a project references should render AND have its scaffold-report.json validate, mirroring the slug pattern the requirements schema already uses.",
+  "goals": [
+    "Make scaffold-report.schema.json accept any lowercase build_type slug instead of the fixed [game, cli, app, library, other] enum.",
+    "Keep the scaffold-report build_type validation aligned with requirements.schema.json so the two never drift.",
+    "Remove the last place where adding a new template requires editing a hardcoded list, fulfilling the dir-driven one-folder promise.",
+    "Prove the decoupling with a regression test that scaffolds a novel build_type and asserts its report validates."
+  ],
+  "features": [
+    {
+      "name": "Slug-pattern build_type in scaffold-report schema",
+      "description": "Replace the build_type enum in contracts/schemas/v1/scaffold-report.schema.json with { type: string, pattern: ^[a-z0-9][a-z0-9-]* } matching requirements.schema.json."
+    },
+    {
+      "name": "Enum-free scaffold error message",
+      "description": "Update the missing-build_type error in cli/lib/scaffold.js so it no longer hardcodes (game|cli|app|library|other); point the operator at templates/ instead."
+    },
+    {
+      "name": "Novel-build_type regression test",
+      "description": "Add a test that renders a build_type with no entry in the old enum and asserts both scaffold success and scaffold-report validation pass."
+    }
+  ],
+  "constraints": [
+    "No LLM anywhere in the CLI; this is a deterministic schema/validation change.",
+    "Zero new dependencies; reuse the existing custom validator and scaffold pipeline.",
+    "Do not change build-manifest or build-report schemas (already enum-free) or any other phase.",
+    "Test-first: add the failing regression test before changing the schema.",
+    "Single task touching tests/appbuilder.test.js — no overlapping concurrent tasks."
+  ]
+}
