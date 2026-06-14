@@ -2,6 +2,11 @@
 .remember/
 .obsidian/
 coordination/generated/
+# Live coordination state lives only on the coordination branch (via the .appbuilder
+# worktree), never tracked on normal branches. doctor's coordination:tracked-state guards this.
+coordination/claims/
+coordination/queue/
+coordination/handoffs/
 node_modules/
 npm-debug.log*
 .DS_Store

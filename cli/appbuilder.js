@@ -441,6 +441,19 @@ function doctor(cwd) {
     check("git-head", hasAnyCommit(root), "initial commit exists");
     check("coordination-branch", branchExists(root, project.config.coordination_branch), project.config.coordination_branch);
     check("coordination-worktree", fs.existsSync(path.join(root, COORD_WORKTREE)), COORD_WORKTREE);
+    // Live coordination state (claims/queue/handoffs) belongs only on the coordination branch,
+    // reached through the internal .appbuilder worktree. If it is tracked on a normal branch
+    // (e.g. leaked in by a stray merge), agents can read a stale, contradictory mirror — so fail.
+    if (currentBranch(root) !== project.config.coordination_branch) {
+      const tracked = git(root, ["ls-files", "coordination/claims", "coordination/queue", "coordination/handoffs"], { allowFail: true });
+      const trackedFiles = (tracked.stdout || "").split("\n").map((line) => line.trim()).filter(Boolean);
+      const cleanState = trackedFiles.length === 0;
+      check(
+        "coordination:tracked-state",
+        cleanState,
+        cleanState ? "no live coordination state tracked on this branch" : `tracked here (belongs on ${project.config.coordination_branch}): ${trackedFiles.join(", ")}`
+      );
+    }
     const statusResult = git(root, ["status", "--short"], { allowFail: true });
     check("git-status", statusResult.status === 0, statusResult.stdout.trim() || "clean", "warn");
   }

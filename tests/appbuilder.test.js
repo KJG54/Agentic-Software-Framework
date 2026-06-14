@@ -567,6 +567,36 @@ test("doctor guards the plan-interview wiring against drift", () => {
   assert.match(out, /failures:[\s\S]*plan-interview:guide/);
 });
 
+test("doctor flags tracked live coordination state on a normal branch", () => {
+  const fixture = makeFixture();
+  run("git", ["init", "-b", "main"], fixture);
+  configureGitUser(fixture);
+  run("git", ["add", "."], fixture);
+  run("git", ["commit", "-m", "initial"], fixture);
+
+  const doctor = () =>
+    spawnSync(process.execPath, [cliPath, "doctor"], { cwd: fixture, encoding: "utf8" }).stdout;
+
+  // Clean: nothing tracked under coordination/claims|queue|handoffs.
+  let out = doctor();
+  assert.match(out, /ok coordination:tracked-state/);
+
+  // A live claim file gets tracked on the normal branch -> drift problem + hard failure.
+  const claimFile = path.join(fixture, "coordination", "claims", "TASK-999.json");
+  fs.mkdirSync(path.dirname(claimFile), { recursive: true });
+  fs.writeFileSync(claimFile, "{}\n");
+  run("git", ["add", "coordination/claims/TASK-999.json"], fixture);
+  run("git", ["commit", "-m", "leak coordination state"], fixture);
+  out = doctor();
+  assert.match(out, /problem coordination:tracked-state/);
+  assert.match(out, /failures:[\s\S]*coordination:tracked-state/);
+
+  // Untracking it clears the check.
+  run("git", ["rm", "--cached", "coordination/claims/TASK-999.json"], fixture);
+  out = doctor();
+  assert.match(out, /ok coordination:tracked-state/);
+});
+
 function configureGitUser(repo) {
   run("git", ["config", "user.email", "test@example.com"], repo);
   run("git", ["config", "user.name", "Test Agent"], repo);
