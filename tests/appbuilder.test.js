@@ -794,6 +794,91 @@ test("build init refuses to seed a project that was not scaffolded", { timeout: 
   assert.match(noScaffold.stdout + noScaffold.stderr, /scaffold/i);
 });
 
+test("build validates a filled-in manifest and writes a build-report", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  const projectDir = path.join(fixture, "projects", "demo-app");
+  // A two-task plan so we exercise both done and skipped.
+  fs.writeFileSync(path.join(projectDir, "requirements.json"), JSON.stringify({
+    schema_version: "1.0", project: "demo-app", summary: "A small demo app.",
+    goals: ["Ship a working slice"], features: [{ name: "core", description: "the core" }],
+    constraints: [], build_type: "cli"
+  }, null, 2));
+  fs.writeFileSync(path.join(projectDir, "task-plan.json"), JSON.stringify({
+    schema_version: "1.0", project: "demo-app",
+    tasks: [
+      { schema_version: "1.0", id: "TASK-001", title: "Core", files_touched_estimate: ["src/"], depends_on: [] },
+      { schema_version: "1.0", id: "TASK-002", title: "Extra", files_touched_estimate: ["src/"], depends_on: [] }
+    ]
+  }, null, 2));
+  run(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
+  run(process.execPath, [cliPath, "build", "init", "demo-app"], fixture);
+
+  const buildDir = path.join(fixture, "build", "demo-app");
+  const manifestPath = path.join(buildDir, "build-manifest.json");
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  manifest.tasks = [
+    { id: "TASK-001", status: "done", files: ["src/index.js"], reason: "" },
+    { id: "TASK-002", status: "skipped", files: [], reason: "deferred to a later slice" }
+  ];
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+
+  const result = run(process.execPath, [cliPath, "build", "demo-app"], fixture);
+  assert.match(result.stdout, /done=1/);
+  assert.match(result.stdout, /skipped=1/);
+
+  const report = JSON.parse(fs.readFileSync(path.join(buildDir, "build-report.json"), "utf8"));
+  assert.equal(cli.validateBuildReport(report, fixture).ok, true);
+  assert.equal(report.tasks_total, 2);
+  assert.equal(report.tasks_done, 1);
+  assert.equal(report.tasks_skipped, 1);
+  assert.deepEqual(report.files_touched, ["src/index.js"]);
+});
+
+test("build gate rejects pending, missing files, reasonless skips, id mismatch, and scaffold regression", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  const projectDir = path.join(fixture, "projects", "demo-app");
+  writeFilledPlan(projectDir, { build_type: "cli" });
+  run(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
+  run(process.execPath, [cliPath, "build", "init", "demo-app"], fixture);
+
+  const buildDir = path.join(fixture, "build", "demo-app");
+  const manifestPath = path.join(buildDir, "build-manifest.json");
+  const reportPath = path.join(buildDir, "build-report.json");
+  const setTasks = (tasks) => fs.writeFileSync(manifestPath, JSON.stringify({
+    schema_version: "1.0", project: "demo-app", tasks
+  }, null, 2));
+  const expectFail = (re) => {
+    if (fs.existsSync(reportPath)) fs.rmSync(reportPath);
+    const r = runFail(process.execPath, [cliPath, "build", "demo-app"], fixture);
+    assert.match(r.stdout + r.stderr, re);
+    assert(!fs.existsSync(reportPath), "no build-report.json should be written on failure");
+  };
+
+  // Seeded manifest is all-pending -> fails.
+  expectFail(/pending/i);
+  // done but the declared file does not exist.
+  setTasks([{ id: "TASK-001", status: "done", files: ["src/nope.js"], reason: "" }]);
+  expectFail(/nope\.js|missing|exist/i);
+  // skipped without a reason.
+  setTasks([{ id: "TASK-001", status: "skipped", files: [], reason: "" }]);
+  expectFail(/reason/i);
+  // a manifest task that is not in the plan.
+  setTasks([
+    { id: "TASK-001", status: "done", files: ["src/index.js"], reason: "" },
+    { id: "TASK-999", status: "done", files: ["src/index.js"], reason: "" }
+  ]);
+  expectFail(/TASK-999/);
+  // a plan task missing from the manifest.
+  setTasks([]);
+  expectFail(/TASK-001/);
+  // valid manifest, but a scaffold-rendered file was deleted.
+  setTasks([{ id: "TASK-001", status: "done", files: ["package.json"], reason: "" }]);
+  fs.rmSync(path.join(buildDir, "README.md"));
+  expectFail(/README\.md|scaffold/i);
+});
+
 test("plan seed publishes tasks and skips ids already in the queue", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   run("git", ["init", "-b", "main"], fixture);
