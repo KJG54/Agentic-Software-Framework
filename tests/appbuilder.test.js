@@ -8,6 +8,7 @@ const { spawnSync } = require("node:child_process");
 const test = require("node:test");
 
 const cli = require("../cli/appbuilder");
+const schemaValidator = require("../core/validation/schema-validator");
 const repoRoot = path.resolve(__dirname, "..");
 const cliPath = path.join(repoRoot, "cli", "appbuilder.js");
 
@@ -43,6 +44,17 @@ test("scaffold-report validation requires the core report fields", () => {
   const bad = cli.validateScaffoldReport({ schema_version: "1.0", project: "demo", build_type: "cli" }, repoRoot);
   assert.equal(bad.ok, false);
   assert(bad.errors.some((item) => item.includes("template") || item.includes("required")));
+});
+
+test("cli template manifest is valid and its required_files exist", () => {
+  const templateDir = path.join(repoRoot, "templates", "cli");
+  const manifest = JSON.parse(fs.readFileSync(path.join(templateDir, "template.json"), "utf8"));
+  const result = schemaValidator.validateJsonArtifact(repoRoot, "template", manifest);
+  assert.equal(result.ok, true, (result.errors || []).join("; "));
+  assert(Array.isArray(manifest.required_files) && manifest.required_files.length > 0, "required_files must be non-empty");
+  for (const rel of manifest.required_files) {
+    assert(fs.existsSync(path.join(templateDir, "files", rel)), `template missing required file: ${rel}`);
+  }
 });
 
 test("frontmatter parser preserves list values", () => {
