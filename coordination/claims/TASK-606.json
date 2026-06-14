@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-606",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-606-document-templates-and-the-dir-driven-build-type",
+  "claimed_at": "2026-06-14T20:35:07.265Z",
+  "heartbeat_at": "2026-06-14T20:35:07.265Z",
+  "expires_at": "2026-06-15T00:35:07.265Z",
+  "files_touched_estimate": [
+    "HOWTO.md",
+    "README.md",
+    ".agent/plan-interview.md",
+    "templates/README.md"
+  ],
+  "depends_on": [
+    "TASK-601",
+    "TASK-605"
+  ],
+  "overlap_override": null
+}
