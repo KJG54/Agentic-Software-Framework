@@ -11,9 +11,12 @@ The first implementation batch focuses on the multi-agent coordination foundatio
 ## Quickstart
 
 ```bash
-npm test
+node --test                       # run the test suite (canonical, cross-platform)
 node cli/appbuilder.js doctor
 ```
+
+> On Windows, prefer `node --test` over `npm test`: PowerShell's execution policy can block the
+> `npm.ps1` shim. If you want the npm script, `npm.cmd test` works from PowerShell.
 
 In a Git repository with at least one commit:
 
