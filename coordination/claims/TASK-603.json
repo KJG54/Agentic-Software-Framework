@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-603",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-603-author-the-app-build-type-template",
+  "claimed_at": "2026-06-14T20:08:50.055Z",
+  "heartbeat_at": "2026-06-14T20:08:50.055Z",
+  "expires_at": "2026-06-15T00:08:50.055Z",
+  "files_touched_estimate": [
+    "templates/app/template.json",
+    "templates/app/files/package.json",
+    "templates/app/files/README.md",
+    "templates/app/files/.gitignore",
+    "templates/app/files/src/server.js",
+    "templates/app/files/test/server.test.js",
+    "tests/appbuilder.test.js"
+  ],
+  "depends_on": [],
+  "overlap_override": null
+}
