@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "id": "app",
+  "name": "Node HTTP App",
+  "description": "A minimal, zero-dependency Node.js HTTP service skeleton built on node:http.",
+  "tags": ["app", "http", "node"],
+  "required_files": ["package.json", "README.md", ".gitignore", "src/server.js", "test/server.test.js"]
+}
