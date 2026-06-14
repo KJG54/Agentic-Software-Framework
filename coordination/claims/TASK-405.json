@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-405",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-405-add-concrete-token-session-budget-guidance",
+  "claimed_at": "2026-06-14T01:59:39.216Z",
+  "heartbeat_at": "2026-06-14T01:59:39.216Z",
+  "expires_at": "2026-06-14T05:59:39.216Z",
+  "files_touched_estimate": [
+    ".agent/rules/token-use.md",
+    "HOWTO.md"
+  ],
+  "depends_on": [],
+  "overlap_override": null
+}
