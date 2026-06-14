@@ -441,6 +441,19 @@ function doctor(cwd) {
     check("git-head", hasAnyCommit(root), "initial commit exists");
     check("coordination-branch", branchExists(root, project.config.coordination_branch), project.config.coordination_branch);
     check("coordination-worktree", fs.existsSync(path.join(root, COORD_WORKTREE)), COORD_WORKTREE);
+    // Live coordination state (claims/queue/handoffs) belongs only on the coordination branch,
+    // reached through the internal .appbuilder worktree. If it is tracked on a normal branch
+    // (e.g. leaked in by a stray merge), agents can read a stale, contradictory mirror — so fail.
+    if (currentBranch(root) !== project.config.coordination_branch) {
+      const tracked = git(root, ["ls-files", "coordination/claims", "coordination/queue", "coordination/handoffs"], { allowFail: true });
+      const trackedFiles = (tracked.stdout || "").split("\n").map((line) => line.trim()).filter(Boolean);
+      const cleanState = trackedFiles.length === 0;
+      check(
+        "coordination:tracked-state",
+        cleanState,
+        cleanState ? "no live coordination state tracked on this branch" : `tracked here (belongs on ${project.config.coordination_branch}): ${trackedFiles.join(", ")}`
+      );
+    }
     const statusResult = git(root, ["status", "--short"], { allowFail: true });
     check("git-status", statusResult.status === 0, statusResult.stdout.trim() || "clean", "warn");
   }
@@ -915,6 +928,22 @@ function changedFilesForHandoff(root) {
   return result.stdout.split(/\r?\n/).filter(Boolean);
 }
 
+function changedFilesWithStatus(root) {
+  const base = git(root, ["merge-base", "HEAD", "main"], { allowFail: true });
+  const args = base.status === 0 && base.stdout.trim()
+    ? ["diff", "--name-status", `${base.stdout.trim()}...HEAD`]
+    : ["diff", "--name-status", "HEAD"];
+  const result = git(root, args, { allowFail: true });
+  if (result.status !== 0) return [];
+  return result.stdout.split(/\r?\n/).filter(Boolean).map((line) => {
+    // name-status lines are "<status>\t<file>", or "<Rxxx|Cxxx>\t<src>\t<dest>" for
+    // renames/copies. Use the last path (the destination) as the file of interest.
+    const parts = line.split("\t");
+    if (parts.length < 2) return null;
+    return { status: parts[0].trim(), file: parts[parts.length - 1].trim() };
+  }).filter((entry) => entry && entry.file);
+}
+
 function compactTimestamp(date) {
   return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 }
@@ -1014,10 +1043,15 @@ function ready(cwd, args) {
     }
   }
 
-  const changedFiles = changedFilesForHandoff(project.root);
-  for (const file of changedFiles) {
-    if (file.startsWith("coordination/") || file.startsWith(".appbuilder/")) failures.push(`Forbidden changed file in task branch: ${file}`);
-    if (looksLikeSecret(file, project.root)) failures.push(`Possible secret in changed file: ${file}`);
+  const changedFiles = changedFilesWithStatus(project.root);
+  for (const { status, file } of changedFiles) {
+    // Deleting leaked coordination/.appbuilder state is the sanctioned cleanup (the
+    // coordination:tracked-state doctor check exists to catch that leak). Only ADDING or
+    // MODIFYING live state on a task branch is forbidden — never go through the tree, use the CLI.
+    if (status !== "D" && (file.startsWith("coordination/") || file.startsWith(".appbuilder/"))) {
+      failures.push(`Forbidden changed file in task branch: ${file}`);
+    }
+    if (status !== "D" && looksLikeSecret(file, project.root)) failures.push(`Possible secret in changed file: ${file}`);
   }
 
   for (const warning of warnings) console.log(`warn ${warning}`);
