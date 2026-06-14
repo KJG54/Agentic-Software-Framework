@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-801",
+  "title": "Author the test-report contract and validator",
+  "description": "Add contracts/schemas/v1/test-report.schema.json (required: schema_version const 1.0, project, generated_at date-time, command, tests_total, tests_passed, tests_failed, tests_skipped; counts integer minimum 0; additionalProperties false; enum-free). Add validateTestReport to cli/lib/validate.js (mirroring validateBuildReport), export it, import it in cli/appbuilder.js and add it to module.exports, and append 'test-report' to REQUIRED_SCHEMA_NAMES. Test-first: add validateTestReport unit tests (valid report passes; missing/!=0-count report fails).",
+  "depends_on": [],
+  "files_touched_estimate": [
+    "contracts/schemas/v1/test-report.schema.json",
+    "cli/lib/validate.js",
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "test-report.schema.json validates the eight required fields with enum-free, integer-minimum-0 counts.",
+    "validateTestReport is exported from cli/lib/validate.js and re-exported from cli/appbuilder.js.",
+    "REQUIRED_SCHEMA_NAMES includes 'test-report' (doctor checks it).",
+    "Full suite passes: node --test \"tests/**/*.test.js\"."
+  ]
+}

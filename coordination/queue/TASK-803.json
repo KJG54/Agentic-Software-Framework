@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-803",
+  "title": "Document the test phase for operators",
+  "description": "Add a Test section to README.md (the verb, what the gate checks, link to HOWTO) and a thorough test-phase walkthrough to HOWTO.md after the Build section (the verb, the gate rules, the test-report.json, a failure-mode -> fix table), renumbering the subsequent sections. Update the 'Later phases' note to drop test. Drop test from any 'start/test/review/ship are placeholders' wording. Docs only.",
+  "depends_on": [
+    "TASK-802"
+  ],
+  "files_touched_estimate": [
+    "README.md",
+    "HOWTO.md"
+  ],
+  "acceptance_criteria": [
+    "HOWTO.md has a thorough test-phase walkthrough with the gate rules and a failure-mode table; later sections renumbered.",
+    "README.md has a Test section; 'later phases' wording lists only start/review/ship.",
+    "doctor stays green (no broken plan-interview/onboarding references)."
+  ]
+}
