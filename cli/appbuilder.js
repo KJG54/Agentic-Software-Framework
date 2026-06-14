@@ -126,6 +126,7 @@ Planning commands:
 
 Build commands:
   build init <slug>        Seed build/<slug>/build-manifest.json with every plan task pending (--force to re-seed)
+  build <slug>             Validate the filled-in manifest and write build/<slug>/build-report.json
 
 Later-phase workflow placeholders:
   start test review ship`);

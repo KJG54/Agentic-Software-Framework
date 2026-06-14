@@ -121,7 +121,94 @@ manifest is scaffoldable, so a `build_type` with no matching folder simply repor
 template for build_type X yet". Adding a new template is a one-folder change — see
 [templates/README.md](templates/README.md).
 
-## 4. How work gets done
+## 4. Build the project (`build/<slug>` → `build-report.json`)
+
+`build` is the deterministic checkpoint between `scaffold` and `test`. Like every phase, it has
+**no LLM**: the *agent* writes the real code into `build/<slug>/`, and the `build` command only
+seeds an accounting stub and then validates what the agent declares against the plan and the
+files on disk. It is a two-verb flow, mirroring `plan new` → `plan compile`.
+
+```bash
+appbuilder build init my-app          # seed the manifest (every plan task pending)
+appbuilder build init my-app --force  # re-seed an existing manifest
+appbuilder build my-app               # validate the filled-in manifest, write the report
+```
+
+### Step 1 — `build init`: seed the manifest
+
+`build init` gates on `build/<slug>/scaffold-report.json` (you cannot build what was not
+scaffolded), reads the compiled plan, and writes `build/<slug>/build-manifest.json` with **one
+entry per plan task, all `pending`**:
+
+```json
+{
+  "schema_version": "1.0",
+  "project": "my-app",
+  "tasks": [
+    { "id": "TASK-001", "status": "pending", "files": [], "reason": "" }
+  ]
+}
+```
+
+It refuses to overwrite an existing manifest unless you pass `--force`, so a partly-filled
+manifest is never clobbered by accident.
+
+### Step 2 — the agent fills it in
+
+As each task is implemented, the agent edits its manifest entry:
+
+- **`status`** — one of:
+  - `done` — implemented. Must list at least one real file under `files`.
+  - `skipped` — deliberately not done. Must carry a non-empty `reason`.
+  - `pending` — not addressed yet. Blocks the gate (this is the point — nothing is left
+    unaccounted for).
+- **`files`** — the paths (relative to `build/<slug>/`) the task touched.
+- **`reason`** — required for a `skip`; explains why a planned task was dropped or deferred.
+
+### Step 3 — `build`: validate and report
+
+`appbuilder build <slug>` is the gate. It **passes only when**:
+
+1. `build-manifest.json` exists and is schema-valid.
+2. The manifest's task ids exactly match `task-plan.json` — no plan task missing, no stray ids.
+3. No task is `pending`.
+4. Every `done` task lists ≥1 `file`, and every listed file exists under `build/<slug>/`.
+5. Every `skipped` task has a non-empty `reason`.
+6. The files recorded in `scaffold-report.json` still exist (the scaffold has not regressed).
+
+On success it writes `build/<slug>/build-report.json` — task counts plus the union of touched
+files — for the test phase to consume:
+
+```json
+{
+  "schema_version": "1.0",
+  "project": "my-app",
+  "generated_at": "2026-06-14T00:00:00.000Z",
+  "tasks_total": 3,
+  "tasks_done": 2,
+  "tasks_skipped": 1,
+  "files_touched": ["src/index.js", "src/parser.js"]
+}
+```
+
+On **any** failure it prints every problem as a `fail build: …` line (all at once, like `plan
+compile`), exits non-zero, and **writes nothing** — so a red gate never leaves a stale report
+behind. Common failures and their fixes:
+
+| `fail build: …` says | Fix |
+| --- | --- |
+| `task TASK-NNN is still pending` | Finish it and set `status`, or `skip` it with a reason. |
+| `done task TASK-NNN must list at least one file` | Record the files it touched. |
+| `done task TASK-NNN lists a missing file: X` | Fix the path, or create the file. |
+| `skipped task TASK-NNN must carry a reason` | Add a `reason` for the skip. |
+| `manifest is missing plan task TASK-NNN` | Add the task entry (or `build init --force` to re-seed). |
+| `manifest task TASK-NNN is not in the plan` | Remove the stray id, or add the task to the plan. |
+| `scaffold file no longer exists: X` | Restore the scaffolded file the build deleted. |
+
+Re-run `appbuilder build <slug>` until it passes. The resulting `build-report.json` is what the
+`test` phase (a later slice) will build on.
+
+## 5. How work gets done
 
 Once tasks are in the queue, an agent (or you) runs the coordination loop per task:
 
@@ -161,5 +248,5 @@ Codex agents don't get the shortcuts but auto-load the same workflow from [AGENT
 
 ## Later phases
 
-`start`, `build`, `test`, `review`, and `ship` are placeholders today. They will fill in the
-rest of the loop (`plan → scaffold → build → test → review → ship`) in future slices.
+`start`, `test`, `review`, and `ship` are placeholders today. They will fill in the rest of the
+loop (`plan → scaffold → build → test → review → ship`) in future slices.
