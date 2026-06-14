@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "project": "test-phase",
+  "tasks": [
+    {
+      "schema_version": "1.0",
+      "id": "TASK-801",
+      "title": "Author the test-report contract and validator",
+      "description": "Add contracts/schemas/v1/test-report.schema.json (required: schema_version const 1.0, project, generated_at date-time, command, tests_total, tests_passed, tests_failed, tests_skipped; counts integer minimum 0; additionalProperties false; enum-free). Add validateTestReport to cli/lib/validate.js (mirroring validateBuildReport), export it, import it in cli/appbuilder.js and add it to module.exports, and append 'test-report' to REQUIRED_SCHEMA_NAMES. Test-first: add validateTestReport unit tests (valid report passes; missing/!=0-count report fails).",
+      "files_touched_estimate": [
+        "contracts/schemas/v1/test-report.schema.json",
+        "cli/lib/validate.js",
+        "cli/appbuilder.js",
+        "tests/appbuilder.test.js"
+      ],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "test-report.schema.json validates the eight required fields with enum-free, integer-minimum-0 counts.",
+        "validateTestReport is exported from cli/lib/validate.js and re-exported from cli/appbuilder.js.",
+        "REQUIRED_SCHEMA_NAMES includes 'test-report' (doctor checks it).",
+        "Full suite passes: node --test \"tests/**/*.test.js\"."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-802",
+      "title": "Implement the test verb (run, gate, report)",
+      "description": "Add cli/lib/test.js exporting test(cwd, args): resolve build/<slug>/, fail if build-report.json is absent, spawn `node --test` over the project's test glob in build/<slug>/, parse the summary lines for counts, and gate on build-report present + >=1 test + zero failures. On failure print the captured output and a `fail test:` line, exit 1, write nothing (including the zero-tests case -> 'no tests found'). On pass build and validate a test-report.json then write build/<slug>/test-report.json. Wire `case test` in cli/appbuilder.js out of the start/test/review/ship placeholder group, and add a Test section to the help text. Test-first: happy path (scaffold cli -> build -> test passes, report counts + schema valid) and gate reds (missing build-report; a failing test writes no report; zero tests writes no report).",
+      "files_touched_estimate": [
+        "cli/lib/test.js",
+        "cli/appbuilder.js",
+        "tests/appbuilder.test.js"
+      ],
+      "depends_on": ["TASK-801"],
+      "acceptance_criteria": [
+        "`appbuilder test <slug>` runs node --test in build/<slug>/ and exits non-zero on any test failure, missing build-report, or zero tests.",
+        "On success it writes a schema-valid build/<slug>/test-report.json with accurate counts and the exact command; on any failure it writes nothing.",
+        "test is routed as its own command and removed from the placeholder group; help text documents it.",
+        "Full suite passes: node --test \"tests/**/*.test.js\"."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-803",
+      "title": "Document the test phase for operators",
+      "description": "Add a Test section to README.md (the verb, what the gate checks, link to HOWTO) and a thorough test-phase walkthrough to HOWTO.md after the Build section (the verb, the gate rules, the test-report.json, a failure-mode -> fix table), renumbering the subsequent sections. Update the 'Later phases' note to drop test. Drop test from any 'start/test/review/ship are placeholders' wording. Docs only.",
+      "files_touched_estimate": [
+        "README.md",
+        "HOWTO.md"
+      ],
+      "depends_on": ["TASK-802"],
+      "acceptance_criteria": [
+        "HOWTO.md has a thorough test-phase walkthrough with the gate rules and a failure-mode table; later sections renumbered.",
+        "README.md has a Test section; 'later phases' wording lists only start/review/ship.",
+        "doctor stays green (no broken plan-interview/onboarding references)."
+      ]
+    }
+  ]
+}
