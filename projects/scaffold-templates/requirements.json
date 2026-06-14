@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "project": "scaffold-templates",
+  "summary": "Complete the scaffold phase's build-type coverage by authoring the remaining zero-dependency Node templates (game, app, library) and making templates dir-driven so future ones drop in as a single folder. The scaffold engine is unchanged; this slice adds template content, decouples build_type from a closed schema enum, and adds an `appbuilder templates` discovery command so the templates/ directory becomes the single source of truth for what is scaffoldable.",
+  "goals": [
+    "Author working, zero-dependency Node templates for the game, app, and library build types so every meaningful build_type (cli already exists; other is the intentional template-less catch-all) can be scaffolded end-to-end.",
+    "Make templates dir-driven: adding a new template should require only dropping a templates/<id>/ folder, with no schema edit, so the framework is easy to extend later.",
+    "Give operators and agents a way to see the live list of available templates rather than relying on a hardcoded enum.",
+    "Keep every template consistent with the existing cli template: only node: built-ins, node --test compatible, no npm install, deterministic {{slug}}/{{summary}} substitution.",
+    "Preserve existing guarantees: zero runtime dependencies, the human-approval gate before seed, and a green test suite that does not pick up generated build/<slug>/ stubs."
+  ],
+  "features": [
+    {
+      "name": "library template",
+      "description": "templates/library/ — a reusable Node module skeleton. template.json manifest (valid against template.schema.json, required_files listed) plus files/ tree: package.json with main=src/index.js and no bin, src/index.js exporting a sample function, test/index.test.js exercising it, README.md, .gitignore. Uses only {{slug}}/{{summary}} placeholders."
+    },
+    {
+      "name": "app template",
+      "description": "templates/app/ — a node:http service skeleton. src/server.js exports both the request handler and a start(port) helper; test/server.test.js binds an ephemeral port (listen(0)), makes one request and asserts the response, so it is fully testable with zero dependencies. package.json start script runs node src/server.js. Plus README.md, .gitignore, manifest."
+    },
+    {
+      "name": "game template",
+      "description": "templates/game/ — a terminal game skeleton split into a pure src/game.js reducer (step(state, input)) and a thin src/index.js stdin loop that wires the reducer to the terminal. test/game.test.js targets the pure reducer (deterministic, no TTY). Plus package.json, README.md, .gitignore, manifest."
+    },
+    {
+      "name": "dir-driven build_type",
+      "description": "Change build_type in contracts/schemas/v1/requirements.schema.json from the closed enum [game,cli,app,library,other] to a format-validated slug string (pattern ^[a-z0-9][a-z0-9-]*$). The templates/ directory plus scaffold's existing 'no template for build_type' error become the real gate, so adding a template no longer requires a schema edit."
+    },
+    {
+      "name": "templates discovery command",
+      "description": "A new cli/lib/templates.js module dispatched from the router as `appbuilder templates`. It scans templates/*/template.json and lists id, name, and description; human-readable by default with a --json mode matching the status command pattern. Surfaces the live, dir-driven template list."
+    },
+    {
+      "name": "template authoring docs",
+      "description": "An 'authoring a template' recipe (folder layout, template.json contract, the two substitution variables, required_files, and that a folder is all it takes). Update HOWTO.md/README.md scaffold sections to mention `appbuilder templates` and the open build_type, and point .agent/plan-interview.md at the live list instead of a hardcoded enum."
+    }
+  ],
+  "constraints": [
+    "No LLM or idea-parsing logic; scaffolding stays deterministic copy + {{slug}}/{{summary}} substitution only.",
+    "Zero new runtime dependencies; every template uses only node: built-ins and is node --test compatible (no npm install).",
+    "Do not change the scaffold engine (cli/lib/scaffold.js) beyond what dir-driven build_type requires; the rendering contract is already correct.",
+    "Loosening build_type must not break existing requirements.json artifacts (cli/scaffold-phase) — an omitted build_type stays valid and existing values still validate.",
+    "Generated code lives in build/<slug>/ and must not pollute the framework test suite; keep the scoped node --test \"tests/**/*.test.js\" invocation.",
+    "Test-first for all code; the full suite and doctor stay green; the human-approval-before-seed gate is not bypassed.",
+    "Implement only this slice: the three templates, dir-driven build_type, the templates command, and docs. No unrelated commands or build-type frameworks."
+  ]
+}

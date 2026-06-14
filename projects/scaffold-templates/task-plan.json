@@ -1,0 +1,122 @@
+{
+  "schema_version": "1.0",
+  "project": "scaffold-templates",
+  "tasks": [
+    {
+      "schema_version": "1.0",
+      "id": "TASK-601",
+      "title": "Make build_type dir-driven (loosen the schema enum)",
+      "description": "Change build_type in contracts/schemas/v1/requirements.schema.json from the closed enum [game,cli,app,library,other] to a format-validated slug string (pattern ^[a-z0-9][a-z0-9-]*$, optional). The templates/ directory plus scaffold's existing 'no template for build_type' error remain the real gate. Verify the custom validator enforces the pattern (and drop any enum special-casing in cli/lib/validate.js if present). Test-first.",
+      "files_touched_estimate": [
+        "contracts/schemas/v1/requirements.schema.json",
+        "cli/lib/validate.js",
+        "tests/appbuilder.test.js"
+      ],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "build_type is declared as an optional slug-pattern string; the closed enum is gone.",
+        "plan compile accepts a valid slug build_type (e.g. cli, library) and a requirements.json with no build_type, and rejects a malformed value (e.g. \"Not A Slug\").",
+        "Existing cli and scaffold-phase requirements still validate; a test covers valid/omitted/invalid cases; full suite passes."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-602",
+      "title": "Author the library build-type template",
+      "description": "Create templates/library/template.json (valid against template.schema.json, required_files listed) and templates/library/files/: package.json (name {{slug}}, main src/index.js, no bin, test script), README.md, .gitignore, src/index.js exporting a sample function, test/index.test.js exercising it. Only {{slug}}/{{summary}} placeholders; only node: built-ins. A test renders the template into a temp project and asserts required_files are produced and the report validates.",
+      "files_touched_estimate": [
+        "templates/library/template.json",
+        "templates/library/files/package.json",
+        "templates/library/files/README.md",
+        "templates/library/files/.gitignore",
+        "templates/library/files/src/index.js",
+        "templates/library/files/test/index.test.js",
+        "tests/appbuilder.test.js"
+      ],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "templates/library/template.json validates against template.schema.json and lists its required_files.",
+        "Scaffolding build_type=library renders the files/ tree with {{slug}}/{{summary}} substituted and writes a valid scaffold-report.json.",
+        "The rendered test/index.test.js passes under node --test; a framework test covers the render; full suite passes."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-603",
+      "title": "Author the app build-type template",
+      "description": "Create templates/app/template.json and templates/app/files/: package.json (name {{slug}}, start script 'node src/server.js', test script), README.md, .gitignore, src/server.js exporting a request handler and a start(port) helper using node:http, test/server.test.js that binds an ephemeral port (listen(0)), makes one request and asserts the response. Only {{slug}}/{{summary}} placeholders; only node: built-ins. A test renders the template and asserts required_files + valid report.",
+      "files_touched_estimate": [
+        "templates/app/template.json",
+        "templates/app/files/package.json",
+        "templates/app/files/README.md",
+        "templates/app/files/.gitignore",
+        "templates/app/files/src/server.js",
+        "templates/app/files/test/server.test.js",
+        "tests/appbuilder.test.js"
+      ],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "templates/app/template.json validates against template.schema.json and lists its required_files.",
+        "Scaffolding build_type=app renders the files/ tree with placeholders substituted and writes a valid scaffold-report.json.",
+        "The rendered server test binds an ephemeral port and passes under node --test with zero dependencies; full suite passes."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-604",
+      "title": "Author the game build-type template",
+      "description": "Create templates/game/template.json and templates/game/files/: package.json (name {{slug}}, test script), README.md, .gitignore, src/game.js with a pure step(state, input) reducer and an initialState, src/index.js wiring the reducer to a stdin loop, test/game.test.js exercising the pure reducer. Only {{slug}}/{{summary}} placeholders; only node: built-ins. A test renders the template and asserts required_files + valid report.",
+      "files_touched_estimate": [
+        "templates/game/template.json",
+        "templates/game/files/package.json",
+        "templates/game/files/README.md",
+        "templates/game/files/.gitignore",
+        "templates/game/files/src/game.js",
+        "templates/game/files/src/index.js",
+        "templates/game/files/test/game.test.js",
+        "tests/appbuilder.test.js"
+      ],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "templates/game/template.json validates against template.schema.json and lists its required_files.",
+        "Scaffolding build_type=game renders the files/ tree with placeholders substituted and writes a valid scaffold-report.json.",
+        "The pure reducer test passes under node --test (no TTY needed); full suite passes."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-605",
+      "title": "Add the `appbuilder templates` discovery command",
+      "description": "Add cli/lib/templates.js exporting listTemplates(cwd) that scans templates/*/template.json, and dispatch `appbuilder templates [--json]` from the router. Default output is a human-readable list of id / name / description; --json emits the structured list (matching the status command pattern). Skips non-template entries (e.g. .gitkeep) gracefully. Test-first.",
+      "files_touched_estimate": [
+        "cli/lib/templates.js",
+        "cli/appbuilder.js",
+        "tests/appbuilder.test.js"
+      ],
+      "depends_on": ["TASK-602", "TASK-603", "TASK-604"],
+      "acceptance_criteria": [
+        "appbuilder templates lists every templates/<id>/ with a valid manifest (cli, library, app, game) showing id, name, description.",
+        "appbuilder templates --json emits a valid structured list; both modes ignore .gitkeep and malformed entries without crashing.",
+        "A test asserts the command lists the known templates in both modes; full suite passes and doctor is green."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-606",
+      "title": "Document templates and the dir-driven build_type",
+      "description": "Add an 'authoring a template' recipe (folder layout, template.json contract, the {{slug}}/{{summary}} variables, required_files, 'a folder is all it takes'). Update HOWTO.md and README.md scaffold sections to mention `appbuilder templates` and the open build_type, and update .agent/plan-interview.md to point at the live `appbuilder templates` list instead of a hardcoded enum. Docs only.",
+      "files_touched_estimate": [
+        "HOWTO.md",
+        "README.md",
+        ".agent/plan-interview.md",
+        "templates/README.md"
+      ],
+      "depends_on": ["TASK-601", "TASK-605"],
+      "acceptance_criteria": [
+        "A template-authoring recipe documents the folder layout, manifest contract, substitution variables, and required_files.",
+        "HOWTO.md/README.md mention `appbuilder templates` and the dir-driven build_type; .agent/plan-interview.md points at the live list rather than a fixed enum.",
+        "No stale 'no template for X yet' or closed-enum language remains where it is now wrong; full suite passes (docs-only change)."
+      ]
+    }
+  ]
+}
