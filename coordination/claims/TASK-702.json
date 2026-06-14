@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-702",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-702-implement-appbuilder-build-init",
+  "claimed_at": "2026-06-14T22:27:01.836Z",
+  "heartbeat_at": "2026-06-14T22:27:01.836Z",
+  "expires_at": "2026-06-15T02:27:01.836Z",
+  "files_touched_estimate": [
+    "cli/lib/build.js",
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "depends_on": [
+    "TASK-701"
+  ],
+  "overlap_override": null
+}
