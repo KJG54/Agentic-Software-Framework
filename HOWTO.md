@@ -98,9 +98,9 @@ appbuilder scaffold my-app --force  # overwrite an existing build/my-app
 
 What it does — deterministically, with **no LLM**:
 
-- Reads `requirements.build_type` (one of `game`, `cli`, `app`, `library`, `other`; the
-  build-type interview sets it, and `plan compile` validates the enum) and picks the matching
-  template from `templates/`.
+- Reads `requirements.build_type` (a lowercase slug — the build-type interview sets it, and
+  `plan compile` validates its format) and picks the matching template from `templates/`. Run
+  `appbuilder templates` to see what's available.
 - Gates on `plan compile` first — a project is only scaffolded once its plan is valid.
 - Copies the template's file tree into `build/<slug>/`, substituting `{{slug}}` and `{{summary}}`
   from `requirements.json` into file contents.
@@ -115,8 +115,11 @@ build/my-app/
 ```
 
 Generated code lives under `build/<slug>/` (tracked) — separate from the plan artifacts in
-`projects/<slug>/`. A `cli` template ships today; `game`/`app`/`library` arrive in later slices,
-so `scaffold` reports a clear "no template for build_type X yet" until then.
+`projects/<slug>/`. The `cli`, `library`, `app`, and `game` templates ship today (see
+`appbuilder templates`). Templates are **dir-driven**: any `templates/<id>/` with a valid
+manifest is scaffoldable, so a `build_type` with no matching folder simply reports a clear "no
+template for build_type X yet". Adding a new template is a one-folder change — see
+[templates/README.md](templates/README.md).
 
 ## 4. How work gets done
 

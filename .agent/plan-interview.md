@@ -41,8 +41,9 @@ matching Phase B track.
 3. **Who uses it, and in what context?** (who, where, how often, what they bring)
    → seeds `constraints` and frames the features.
 4. **Which best describes it — a game, a CLI tool, an app, a library, or something else?**
-   → routes to the matching **Phase B** track below (use the generic fallback for "something
-   else").
+   → seeds `build_type` (a lowercase slug) and routes to the matching **Phase B** track below
+   (use the generic fallback for "something else"). `build_type` is dir-driven, not a fixed
+   enum — run `appbuilder templates` for the live list of build types `scaffold` can render.
 
 ---
 
