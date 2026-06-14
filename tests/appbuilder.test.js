@@ -605,6 +605,36 @@ test("scaffold renders the app template into a working http service", { timeout:
   assert.equal(rendered.status, 0, rendered.stdout + rendered.stderr);
 });
 
+test("scaffold renders the game template with a testable pure reducer", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  const projectDir = path.join(fixture, "projects", "demo-app");
+  writeFilledPlan(projectDir, { build_type: "game" });
+
+  const result = run(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
+  assert.match(result.stdout, /scaffolded demo-app/);
+
+  const buildDir = path.join(fixture, "build", "demo-app");
+  const pkg = JSON.parse(fs.readFileSync(path.join(buildDir, "package.json"), "utf8"));
+  assert.equal(pkg.name, "demo-app");
+  // Game logic is split into a pure reducer (game.js) and a thin stdin loop (index.js).
+  const gameSrc = fs.readFileSync(path.join(buildDir, "src", "game.js"), "utf8");
+  assert.doesNotMatch(gameSrc, /\{\{\w+\}\}/);
+
+  // Report reflects the game template and is schema-valid.
+  const report = JSON.parse(fs.readFileSync(path.join(buildDir, "scaffold-report.json"), "utf8"));
+  assert.equal(report.build_type, "game");
+  assert.equal(report.template, "game");
+  assert(report.rendered_files.includes("src/game.js"));
+  assert(report.rendered_files.includes("src/index.js"));
+  assert(report.rendered_files.includes("test/game.test.js"));
+  assert.equal(cli.validateScaffoldReport(report, fixture).ok, true);
+
+  // The rendered pure reducer ships a passing test (no TTY needed).
+  const rendered = spawnSync(process.execPath, ["--test", "test/game.test.js"], { cwd: buildDir, encoding: "utf8", stdio: "pipe" });
+  assert.equal(rendered.status, 0, rendered.stdout + rendered.stderr);
+});
+
 test("scaffold fails when build_type is missing or has no template", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
