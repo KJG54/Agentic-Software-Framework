@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-801",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-801-author-the-test-report-contract-and-validator",
+  "claimed_at": "2026-06-14T23:57:54.245Z",
+  "heartbeat_at": "2026-06-14T23:57:54.245Z",
+  "expires_at": "2026-06-15T03:57:54.245Z",
+  "files_touched_estimate": [
+    "contracts/schemas/v1/test-report.schema.json",
+    "cli/lib/validate.js",
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "depends_on": [],
+  "overlap_override": null
+}
