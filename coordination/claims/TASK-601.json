@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-601",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-601-make-build-type-dir-driven-loosen-the-schema-enu",
+  "claimed_at": "2026-06-14T15:50:49.032Z",
+  "heartbeat_at": "2026-06-14T15:50:49.032Z",
+  "expires_at": "2026-06-14T19:50:49.032Z",
+  "files_touched_estimate": [
+    "contracts/schemas/v1/requirements.schema.json",
+    "cli/lib/validate.js",
+    "tests/appbuilder.test.js"
+  ],
+  "depends_on": [],
+  "overlap_override": null
+}
