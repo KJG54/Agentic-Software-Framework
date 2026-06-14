@@ -7,7 +7,7 @@
   "properties": {
     "schema_version": { "const": "1.0" },
     "project": { "type": "string", "minLength": 1 },
-    "build_type": { "enum": ["game", "cli", "app", "library", "other"] },
+    "build_type": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
     "summary": { "type": "string" },
     "goals": {
       "type": "array",
