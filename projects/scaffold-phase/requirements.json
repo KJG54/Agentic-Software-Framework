@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "project": "scaffold-phase",
+  "summary": "Implement the scaffold phase of the App Builder loop: a deterministic `appbuilder scaffold <slug>` command that renders a build-type project skeleton from an approved plan into build/<slug>/. No LLM in the CLI — scaffolding is template copy plus simple variable substitution. This first slice ships the whole mechanism end-to-end with a single CLI template, persists build_type in requirements.json, and emits a validated scaffold-report.json.",
+  "goals": [
+    "Replace the scaffold placeholder with a working `appbuilder scaffold <slug>` command that turns approved plan artifacts into a runnable project skeleton under build/<slug>/.",
+    "Keep scaffolding fully deterministic and LLM-free: copy a build-type template's file tree and substitute a small, documented set of {{variables}} from requirements.json.",
+    "Make the framework build-type-aware in the artifacts by persisting build_type in requirements.json (enum-validated at compile), so scaffold selects its template from the plan rather than a flag.",
+    "Prove the pipeline end-to-end with one real template (cli) and a machine-readable scaffold-report.json, leaving game/app/library templates for later slices.",
+    "Preserve existing guarantees: zero runtime dependencies, the human-approval gate before seed, and a green test suite that does not pick up generated template stubs."
+  ],
+  "features": [
+    {
+      "name": "build_type in requirements",
+      "description": "Add an optional build_type field to requirements.schema.json, enum-constrained to [game, cli, app, library, other]. compile enforces the enum when present; the field stays optional so existing requirements.json files remain valid. This is the artifact-driven signal scaffold reads to pick a template."
+    },
+    {
+      "name": "scaffold-report contract",
+      "description": "A new contracts/schemas/v1/scaffold-report.schema.json (schema_version, project, build_type, template, generated_at, output_dir, rendered_files) registered in doctor's REQUIRED_SCHEMA_NAMES. scaffold writes build/<slug>/scaffold-report.json and validates it against this schema."
+    },
+    {
+      "name": "CLI build-type template",
+      "description": "A templates/cli/ template: template.json manifest (valid against template.schema.json, listing required_files) plus a files/ tree (package.json, README.md, .gitignore, src/index.js, test/index.test.js) using {{slug}} and {{summary}} placeholders. The single template that proves the mechanism."
+    },
+    {
+      "name": "scaffold command",
+      "description": "A new cli/lib/scaffold.js module dispatched from the router. `appbuilder scaffold <slug> [--force]` gates on compilePlan, requires build_type present with an available template, copies templates/<build_type>/files/ into build/<slug>/ with {{variable}} substitution, asserts all required_files were produced, and writes+validates scaffold-report.json. Refuses to overwrite an existing build/<slug>/ unless --force."
+    },
+    {
+      "name": "Test-runner scoping",
+      "description": "Scope the suite (scripts.test and the canonical invocation) to tests/ so generated build/<slug>/test/*.test.js template stubs are never discovered and run as framework tests."
+    },
+    {
+      "name": "Operator docs",
+      "description": "Update README.md and HOWTO.md to document the scaffold phase, the build_type field, build/<slug>/ output, and the loop position (plan -> scaffold -> build)."
+    }
+  ],
+  "constraints": [
+    "No LLM or idea-parsing logic in the CLI; scaffolding is deterministic copy + simple {{variable}} substitution only.",
+    "Zero new runtime dependencies; the framework stays dependency-free.",
+    "build_type stays an optional, enum-constrained field so existing requirements.json artifacts do not break.",
+    "Generated code lives in build/<slug>/ (tracked) and must not pollute the framework test suite.",
+    "Test-first for all code; the full suite and doctor stay green; the human-approval-before-seed gate is not bypassed.",
+    "Implement only the scaffold slice with one cli template; do not author game/app/library templates or add unrelated commands."
+  ]
+}

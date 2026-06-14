@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0",
+  "project": "scaffold-phase",
+  "tasks": [
+    {
+      "schema_version": "1.0",
+      "id": "TASK-501",
+      "title": "Add optional enum-constrained build_type to requirements schema",
+      "description": "Add an optional build_type property to contracts/schemas/v1/requirements.schema.json, enum [game, cli, app, library, other]. The custom validator already enforces enum, so plan compile rejects an out-of-enum build_type while accepting requirements with no build_type. Test-first.",
+      "files_touched_estimate": [
+        "contracts/schemas/v1/requirements.schema.json",
+        "tests/appbuilder.test.js"
+      ],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "requirements.schema.json declares build_type as optional, enum-constrained to [game, cli, app, library, other].",
+        "plan compile rejects a requirements.json whose build_type is outside the enum, and still accepts one with no build_type.",
+        "A test covers both the valid-omitted and invalid-value cases; full suite passes."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-502",
+      "title": "Add scaffold-report schema and register it in doctor",
+      "description": "Add contracts/schemas/v1/scaffold-report.schema.json (schema_version, project, build_type, template, generated_at, output_dir, rendered_files) and add 'scaffold-report' to REQUIRED_SCHEMA_NAMES in cli/appbuilder.js so doctor verifies the schema file exists. Test-first.",
+      "files_touched_estimate": [
+        "contracts/schemas/v1/scaffold-report.schema.json",
+        "cli/appbuilder.js",
+        "tests/appbuilder.test.js"
+      ],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "scaffold-report.schema.json exists and validates a well-formed report object.",
+        "'scaffold-report' is in REQUIRED_SCHEMA_NAMES and doctor passes with the schema present.",
+        "A test validates a sample report against the schema; full suite passes."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-503",
+      "title": "Author the cli build-type template",
+      "description": "Create templates/cli/template.json (valid against template.schema.json, listing required_files) and templates/cli/files/ with package.json, README.md, .gitignore, src/index.js, test/index.test.js using {{slug}} and {{summary}} placeholders. Content authoring; a test asserts the manifest is valid and required_files match the files/ tree.",
+      "files_touched_estimate": [
+        "templates/cli/template.json",
+        "templates/cli/files/package.json",
+        "templates/cli/files/README.md",
+        "templates/cli/files/.gitignore",
+        "templates/cli/files/src/index.js",
+        "templates/cli/files/test/index.test.js",
+        "tests/appbuilder.test.js"
+      ],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "templates/cli/template.json validates against template.schema.json and lists required_files.",
+        "templates/cli/files/ contains the listed files, using only the documented {{slug}}/{{summary}} placeholders.",
+        "A test asserts the manifest is valid and required_files match the files/ tree; full suite passes."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-504",
+      "title": "Implement the scaffold command",
+      "description": "Add cli/lib/scaffold.js and dispatch `appbuilder scaffold <slug> [--force]` from the router (replacing the placeholder). Gate on compilePlan, require build_type present with an available template, copy templates/<build_type>/files/ into build/<slug>/ with {{variable}} substitution, assert required_files were produced, write+validate build/<slug>/scaffold-report.json. Scope the test runner to tests/ so generated stubs are not discovered. Refuse to overwrite build/<slug>/ unless --force. Test-first.",
+      "files_touched_estimate": [
+        "cli/lib/scaffold.js",
+        "cli/appbuilder.js",
+        "package.json",
+        "tests/appbuilder.test.js"
+      ],
+      "depends_on": ["TASK-501", "TASK-502", "TASK-503"],
+      "acceptance_criteria": [
+        "appbuilder scaffold <slug> renders templates/cli into build/<slug>/ with {{slug}}/{{summary}} substituted, and writes a valid scaffold-report.json.",
+        "scaffold gates on compile and fails clearly when build_type is missing or has no template; refuses an existing build/<slug>/ without --force and overwrites with it.",
+        "scripts.test is scoped to tests/ so generated build/<slug>/test stubs are not run; full suite passes and doctor is green."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-505",
+      "title": "Document the scaffold phase",
+      "description": "Update README.md and HOWTO.md to document appbuilder scaffold: the build_type field, build/<slug>/ output, scaffold-report.json, and the loop position plan -> scaffold -> build. Docs only.",
+      "files_touched_estimate": [
+        "README.md",
+        "HOWTO.md"
+      ],
+      "depends_on": ["TASK-504"],
+      "acceptance_criteria": [
+        "README.md and HOWTO.md describe the scaffold command, build_type, build/<slug>/ output, and the loop position.",
+        "No scaffold workflow placeholder language remains where the command is now real.",
+        "Full suite passes (docs-only change)."
+      ]
+    }
+  ]
+}
