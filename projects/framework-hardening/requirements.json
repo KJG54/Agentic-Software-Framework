@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "project": "framework-hardening",
+  "summary": "A batch of correctness and maintainability improvements to the App Builder V2 framework itself, headlined by removing the stale live-coordination state that PR #22 leaked onto main and guarding against its recurrence, plus targeted Windows, operator-UX, and code-structure improvements that strengthen the core loop without adding dependencies.",
+  "goals": [
+    "main never carries live coordination state (claims/queue/handoffs); doctor fails loudly if it ever does again",
+    "Windows operators have a documented, reliable test command that does not depend on PowerShell execution policy",
+    "Human operators can read coordination status as a concise table without breaking the JSON contract agents depend on",
+    "cli/appbuilder.js is split into focused modules so it stays maintainable as the framework grows",
+    "Token/session budgeting is concrete guidance reusing existing fields, not a speculative new subsystem",
+    "All of the above land without adding a single runtime dependency"
+  ],
+  "features": [
+    {
+      "name": "Coordination-state drift guard + clean main",
+      "description": "A doctor check (coordination:tracked-state) that hard-fails when coordination/claims, coordination/queue, or coordination/handoffs are tracked on a normal branch, plus the one-time cleanup that removes the 13 stale files from main and gitignores those subtrees. Combined so main is green on merge."
+    },
+    {
+      "name": "Windows-friendly canonical test command",
+      "description": "Document node --test as the canonical, cross-platform test invocation and note the PowerShell npm.ps1 execution-policy caveat, so npm test failures stop tripping up Windows operators."
+    },
+    {
+      "name": "Human-friendly status view",
+      "description": "A --human flag on appbuilder status that renders a concise table (claim, branch, expiry, next action) derived from existing status data, while keeping JSON as the default output so agents are unaffected."
+    },
+    {
+      "name": "Modularized CLI",
+      "description": "Behavior-preserving refactor of cli/appbuilder.js into cli/lib modules (git, coordination, plan, validate) with the entrypoint as a thin router, isolating the schema validator as the seam a future validation upgrade would build on."
+    },
+    {
+      "name": "Concrete token/session budget guidance",
+      "description": "Extend .agent/rules/token-use.md with concrete budgeting guidance (task-size estimates reusing files_touched_estimate, per-session and weekly heuristics, handoff-compression rules). Guidance only, no engine, no RAG."
+    }
+  ],
+  "constraints": [
+    "Zero runtime dependencies — no AJV or other libraries added (AJV is explicitly deferred to a future conscious decision)",
+    "No LLM inside the CLI; commands stay deterministic scaffolding/validation/coordination",
+    "Every code change is test-first; the existing suite is the safety net for the refactor and must pass unchanged",
+    "Do not break the status JSON output contract that agents consume",
+    "Never work on main directly; never hand-edit live coordination state — go through the CLI",
+    "Anti-bloat: no new folders/services/commands beyond what these features require"
+  ]
+}

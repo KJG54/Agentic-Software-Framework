@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "project": "framework-hardening",
+  "tasks": [
+    {
+      "schema_version": "1.0",
+      "id": "TASK-401",
+      "title": "Guard against tracked coordination state and clean main",
+      "description": "Add a doctor check (coordination:tracked-state) that hard-fails when any path under coordination/claims, coordination/queue, or coordination/handoffs is tracked by git on a normal branch (skipped when checked out on the coordination branch), using the existing git() and currentBranch() helpers. In the same change, verify the CLI never reads the repo-root coordination/ directory as a fallback (it operates on .appbuilder/coordination-worktree), then git rm the 13 stale tracked files and add coordination/claims/, coordination/queue/, coordination/handoffs/ to .gitignore alongside the existing coordination/generated/ entry. Combining the guard and the cleanup in one PR keeps main green on merge. Written test-first.",
+      "files_touched_estimate": ["cli/appbuilder.js", "tests/appbuilder.test.js", ".gitignore"],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "doctor reports problem coordination:tracked-state (and lists it under failures) when a coordination/claims|queue|handoffs file is tracked on a normal branch, and ok otherwise.",
+        "A test creates a git fixture with a tracked coordination/claims file, asserts the failure, then untracks it and asserts the check clears.",
+        "After the change, on main, git ls-files coordination/claims coordination/queue coordination/handoffs returns nothing and appbuilder doctor passes.",
+        "The full test suite passes."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-402",
+      "title": "Make node --test the canonical test command on Windows",
+      "description": "Document node --test as the canonical, cross-platform way to run the suite and explain that npm test can fail on Windows because PowerShell execution policy blocks npm.ps1. Update the HOWTO.md prerequisites/test guidance and mirror it in AGENTS.md if it references npm test. Optionally add a warn-level win32 hint to doctor. Docs-focused; no behavior change to the test runner.",
+      "files_touched_estimate": ["HOWTO.md", "AGENTS.md"],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "HOWTO.md documents node --test as the canonical command and notes the PowerShell npm.ps1 execution-policy caveat.",
+        "Any npm test reference in AGENTS.md is reconciled with the node --test guidance.",
+        "The full test suite passes."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-403",
+      "title": "Add a human-friendly status table view",
+      "description": "Add a --human flag to appbuilder status that prints a concise table (claim, branch, expiry, next action) derived from the data deriveStatus() already computes, with next action chosen per bucket (active -> work/handoff, expired -> release --expired, merged_unreleased -> release, orphaned -> prune). Keep JSON as the default output so agents that parse status are unaffected. Written test-first.",
+      "files_touched_estimate": ["cli/appbuilder.js", "tests/appbuilder.test.js"],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "appbuilder status with no flag still emits valid JSON (unchanged contract).",
+        "appbuilder status --human renders a table with claim, branch, expiry, and next-action columns for an active claim.",
+        "A test asserts both behaviors against a fixture with a claim.",
+        "The full test suite passes."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-404",
+      "title": "Modularize cli/appbuilder.js into cli/lib modules",
+      "description": "Behavior-preserving refactor: extract cohesive modules under cli/lib (e.g. git.js, coordination.js, plan.js, validate.js) and reduce cli/appbuilder.js to a command router that wires them together. Isolate the schema validator as its own module so a future validation upgrade has a clean seam (no dependency added now). The existing test suite must pass unchanged as the proof that behavior is preserved.",
+      "files_touched_estimate": ["cli/appbuilder.js", "cli/lib/git.js", "cli/lib/coordination.js", "cli/lib/plan.js", "cli/lib/validate.js"],
+      "depends_on": ["TASK-401", "TASK-403"],
+      "acceptance_criteria": [
+        "cli/appbuilder.js is reduced to a router that delegates to cli/lib modules.",
+        "The schema validator lives in its own module (cli/lib/validate.js).",
+        "The full existing test suite passes with no changes to the tests.",
+        "appbuilder doctor and status behave identically to before the refactor."
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-405",
+      "title": "Add concrete token/session budget guidance",
+      "description": "Extend .agent/rules/token-use.md with concrete budgeting guidance only: task-size estimation reusing files_touched_estimate, per-session and weekly budget heuristics, and handoff-compression rules. No new engine, artifact subsystem, or RAG. Optionally add a HOWTO.md pointer. Lowest priority; do last.",
+      "files_touched_estimate": [".agent/rules/token-use.md", "HOWTO.md"],
+      "depends_on": [],
+      "acceptance_criteria": [
+        ".agent/rules/token-use.md contains concrete task-size, session, and weekly budget guidance plus handoff-compression rules, reusing files_touched_estimate.",
+        "No new runtime code, dependency, or artifact subsystem is introduced.",
+        "The full test suite passes."
+      ]
+    }
+  ]
+}
