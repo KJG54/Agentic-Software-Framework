@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-704",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-704-document-the-build-phase",
+  "claimed_at": "2026-06-14T22:44:55.191Z",
+  "heartbeat_at": "2026-06-14T22:44:55.191Z",
+  "expires_at": "2026-06-15T02:44:55.191Z",
+  "files_touched_estimate": [
+    "HOWTO.md",
+    "README.md",
+    "cli/appbuilder.js"
+  ],
+  "depends_on": [
+    "TASK-702",
+    "TASK-703"
+  ],
+  "overlap_override": null
+}
