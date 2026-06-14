@@ -73,4 +73,28 @@ first, and writes a validated `build/<slug>/scaffold-report.json`. The `cli`, `l
 and `game` templates ship today; templates are **dir-driven**, so adding one is a one-folder
 change — see [templates/README.md](templates/README.md).
 
-The workflow commands `start`, `build`, `test`, `review`, and `ship` are present as placeholders for later phases.
+## Build
+
+```bash
+appbuilder build init <slug>        # seed build/<slug>/build-manifest.json (every plan task pending)
+appbuilder build init <slug> --force # re-seed an existing manifest
+appbuilder build <slug>             # validate the filled-in manifest, write build/<slug>/build-report.json
+```
+
+`build` is the deterministic checkpoint between `scaffold` and `test` — and, like every phase,
+there is **no LLM** in it. The *agent* writes the real code into `build/<slug>/`; the CLI only
+seeds an accounting stub and then validates what the agent declares.
+
+- `build init` reads the plan and `scaffold-report.json` (it gates on having been scaffolded) and
+  writes `build-manifest.json` with one `pending` entry per plan task. The agent fills each entry
+  in as it works: `status` (`done` / `skipped`), the `files` it touched, and a `reason` for any
+  skip.
+- `build <slug>` validates the manifest against the plan and the files on disk — ids must match
+  the task plan, nothing may be left `pending`, every `done` task must list real files, every
+  `skipped` task needs a reason, and the scaffold's files must still exist. On success it writes
+  `build/<slug>/build-report.json` (task counts + the union of touched files) for the test phase
+  to consume; on failure it prints every problem and writes nothing.
+
+See [HOWTO.md](HOWTO.md) for the full operator walkthrough.
+
+The workflow commands `start`, `test`, `review`, and `ship` are present as placeholders for later phases.
