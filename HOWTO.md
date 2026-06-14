@@ -17,7 +17,13 @@ editing files directly.
 
 ```bash
 appbuilder doctor          # check the environment and framework layout
+node --test                # run the test suite (canonical, cross-platform)
 ```
+
+> **Running the tests:** `node --test` is the canonical command and works the same on every
+> platform. On Windows, prefer it over `npm test` — PowerShell's execution policy can block the
+> `npm.ps1` shim with an error like *"running scripts is disabled on this system"*. If you'd
+> rather use the npm script, `npm.cmd test` invokes it from PowerShell without tripping that.
 
 ## 1. One-time setup
 
