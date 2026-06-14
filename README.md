@@ -62,13 +62,15 @@ walkthrough.
 ```bash
 appbuilder scaffold <slug>          # render the build-type skeleton into build/<slug>
 appbuilder scaffold <slug> --force  # overwrite an existing build/<slug>
+appbuilder templates                # list available templates (--json for scripts)
 ```
 
 `scaffold` deterministically renders a project skeleton from the approved plan into
 `build/<slug>/` — no LLM, just a template file-tree copy plus simple `{{slug}}`/`{{summary}}`
-substitution from `requirements.json`. It reads `requirements.build_type` (one of `game`, `cli`,
-`app`, `library`, `other`; enum-validated at `compile`) to pick a template from `templates/`,
-gates on `plan compile` first, and writes a validated `build/<slug>/scaffold-report.json`. A
-`cli` template ships today; other build types are added in later slices.
+substitution from `requirements.json`. It reads `requirements.build_type` (a lowercase slug,
+format-validated at `compile`) to pick a template from `templates/`, gates on `plan compile`
+first, and writes a validated `build/<slug>/scaffold-report.json`. The `cli`, `library`, `app`,
+and `game` templates ship today; templates are **dir-driven**, so adding one is a one-folder
+change — see [templates/README.md](templates/README.md).
 
 The workflow commands `start`, `build`, `test`, `review`, and `ship` are present as placeholders for later phases.
