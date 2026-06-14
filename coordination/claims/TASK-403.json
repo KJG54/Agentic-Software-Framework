@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-403",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-403-add-a-human-friendly-status-table-view",
+  "claimed_at": "2026-06-14T01:30:53.839Z",
+  "heartbeat_at": "2026-06-14T01:30:53.839Z",
+  "expires_at": "2026-06-14T05:30:53.839Z",
+  "files_touched_estimate": [
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "depends_on": [],
+  "overlap_override": null
+}
