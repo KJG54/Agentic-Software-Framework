@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-405",
+  "title": "Add concrete token/session budget guidance",
+  "description": "Extend .agent/rules/token-use.md with concrete budgeting guidance only: task-size estimation reusing files_touched_estimate, per-session and weekly budget heuristics, and handoff-compression rules. No new engine, artifact subsystem, or RAG. Optionally add a HOWTO.md pointer. Lowest priority; do last.",
+  "depends_on": [],
+  "files_touched_estimate": [
+    ".agent/rules/token-use.md",
+    "HOWTO.md"
+  ],
+  "acceptance_criteria": [
+    ".agent/rules/token-use.md contains concrete task-size, session, and weekly budget guidance plus handoff-compression rules, reusing files_touched_estimate.",
+    "No new runtime code, dependency, or artifact subsystem is introduced.",
+    "The full test suite passes."
+  ]
+}

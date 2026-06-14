@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-401",
+  "title": "Guard against tracked coordination state and clean main",
+  "description": "Add a doctor check (coordination:tracked-state) that hard-fails when any path under coordination/claims, coordination/queue, or coordination/handoffs is tracked by git on a normal branch (skipped when checked out on the coordination branch), using the existing git() and currentBranch() helpers. In the same change, verify the CLI never reads the repo-root coordination/ directory as a fallback (it operates on .appbuilder/coordination-worktree), then git rm the 13 stale tracked files and add coordination/claims/, coordination/queue/, coordination/handoffs/ to .gitignore alongside the existing coordination/generated/ entry. Combining the guard and the cleanup in one PR keeps main green on merge. Written test-first.",
+  "depends_on": [],
+  "files_touched_estimate": [
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js",
+    ".gitignore"
+  ],
+  "acceptance_criteria": [
+    "doctor reports problem coordination:tracked-state (and lists it under failures) when a coordination/claims|queue|handoffs file is tracked on a normal branch, and ok otherwise.",
+    "A test creates a git fixture with a tracked coordination/claims file, asserts the failure, then untracks it and asserts the check clears.",
+    "After the change, on main, git ls-files coordination/claims coordination/queue coordination/handoffs returns nothing and appbuilder doctor passes.",
+    "The full test suite passes."
+  ]
+}

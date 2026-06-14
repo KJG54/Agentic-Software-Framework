@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-402",
+  "title": "Make node --test the canonical test command on Windows",
+  "description": "Document node --test as the canonical, cross-platform way to run the suite and explain that npm test can fail on Windows because PowerShell execution policy blocks npm.ps1. Update the HOWTO.md prerequisites/test guidance and mirror it in AGENTS.md if it references npm test. Optionally add a warn-level win32 hint to doctor. Docs-focused; no behavior change to the test runner.",
+  "depends_on": [],
+  "files_touched_estimate": [
+    "HOWTO.md",
+    "AGENTS.md"
+  ],
+  "acceptance_criteria": [
+    "HOWTO.md documents node --test as the canonical command and notes the PowerShell npm.ps1 execution-policy caveat.",
+    "Any npm test reference in AGENTS.md is reconciled with the node --test guidance.",
+    "The full test suite passes."
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-404",
+  "title": "Modularize cli/appbuilder.js into cli/lib modules",
+  "description": "Behavior-preserving refactor: extract cohesive modules under cli/lib (e.g. git.js, coordination.js, plan.js, validate.js) and reduce cli/appbuilder.js to a command router that wires them together. Isolate the schema validator as its own module so a future validation upgrade has a clean seam (no dependency added now). The existing test suite must pass unchanged as the proof that behavior is preserved.",
+  "depends_on": [
+    "TASK-401",
+    "TASK-403"
+  ],
+  "files_touched_estimate": [
+    "cli/appbuilder.js",
+    "cli/lib/git.js",
+    "cli/lib/coordination.js",
+    "cli/lib/plan.js",
+    "cli/lib/validate.js"
+  ],
+  "acceptance_criteria": [
+    "cli/appbuilder.js is reduced to a router that delegates to cli/lib modules.",
+    "The schema validator lives in its own module (cli/lib/validate.js).",
+    "The full existing test suite passes with no changes to the tests.",
+    "appbuilder doctor and status behave identically to before the refactor."
+  ]
+}
