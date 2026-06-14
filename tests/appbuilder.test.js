@@ -756,6 +756,39 @@ test("scaffold fails when build_type is missing or has no template", { timeout: 
   assert.match(noTemplate.stdout + noTemplate.stderr, /template/i);
 });
 
+test("scaffold is dir-driven: a novel build_type renders and its report validates", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+
+  // Drop in a brand-new template whose id is a valid slug but is absent from the
+  // legacy [game, cli, app, library, other] enum. Adding a template is a one-folder change.
+  const widgetDir = path.join(fixture, "templates", "widget");
+  fs.mkdirSync(path.join(widgetDir, "files", "src"), { recursive: true });
+  fs.writeFileSync(path.join(widgetDir, "template.json"), JSON.stringify({
+    schema_version: "1.0",
+    id: "widget",
+    name: "Widget",
+    description: "A throwaway template proving the scaffold phase is dir-driven.",
+    required_files: ["package.json", "README.md", "src/index.js"]
+  }, null, 2));
+  fs.writeFileSync(path.join(widgetDir, "files", "package.json"), '{ "name": "{{slug}}" }\n');
+  fs.writeFileSync(path.join(widgetDir, "files", "README.md"), "# {{slug}}\n\n{{summary}}\n");
+  fs.writeFileSync(path.join(widgetDir, "files", "src", "index.js"), 'console.log("{{slug}}");\n');
+
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  const projectDir = path.join(fixture, "projects", "demo-app");
+  writeFilledPlan(projectDir, { build_type: "widget" });
+
+  // Scaffold must succeed end-to-end, including writing a schema-valid report —
+  // the report schema must NOT reject a build_type just because it is not one of the old five.
+  const result = run(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
+  assert.match(result.stdout, /scaffolded demo-app/);
+
+  const report = JSON.parse(fs.readFileSync(path.join(fixture, "build", "demo-app", "scaffold-report.json"), "utf8"));
+  assert.equal(report.build_type, "widget");
+  assert.equal(report.template, "widget");
+  assert.equal(cli.validateScaffoldReport(report, fixture).ok, true);
+});
+
 test("build init seeds a pending manifest from the plan after scaffold", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
