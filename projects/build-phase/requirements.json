@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "project": "build-phase",
+  "summary": "Implement the build phase: a deterministic appbuilder checkpoint between scaffold and test. The agent writes the real code into build/<slug>/; the CLI seeds an accounting stub (build init) and then validates the agent's declared work against the plan and the files on disk (build), emitting a build-report.json for later phases. No LLM in the CLI.",
+  "goals": [
+    "Replace the build placeholder with a real, deterministic phase that gates between scaffold and test.",
+    "Keep the no-LLM-in-CLI contract: the agent declares what it built; the CLI only validates the declaration.",
+    "Mirror existing framework shape — two verbs like plan (build init seeds, build validates) and a report JSON like scaffold.",
+    "Give operators a thorough HOWTO walkthrough of the build phase, not a one-liner."
+  ],
+  "features": [
+    {
+      "name": "build-manifest and build-report contracts",
+      "description": "Add contracts/schemas/v1/build-manifest.schema.json (agent-authored input: tasks with status pending|done|skipped, files, reason) and build-report.schema.json (CLI-authored output: counts + files_touched), plus validateBuildManifest/validateBuildReport in cli/lib/validate.js and registration in REQUIRED_SCHEMA_NAMES."
+    },
+    {
+      "name": "appbuilder build init",
+      "description": "Seed build/<slug>/build-manifest.json from task-plan.json + scaffold-report.json with every plan task pre-listed as pending. Gate on scaffold-report.json existing; refuse to overwrite without --force."
+    },
+    {
+      "name": "appbuilder build validation gate",
+      "description": "Validate the manifest against the plan and disk (ids match, no pending, done tasks list existing files, skipped tasks carry a reason, scaffold files not regressed) and write a schema-valid build-report.json on pass; fail loudly and write nothing otherwise."
+    },
+    {
+      "name": "build phase documentation",
+      "description": "Document the build phase thoroughly: a full operator walkthrough in HOWTO.md (both verbs, the manifest the agent fills, failure modes, place in the loop), plus README.md and CLI help-text updates."
+    }
+  ],
+  "constraints": [
+    "No LLM in the CLI; build never generates code, only seeds a stub and validates.",
+    "Zero new runtime dependencies; use node: built-ins and the existing custom schema validator.",
+    "Follow the existing cli/lib/* module pattern and the scaffold/plan phase shapes.",
+    "Test-first; canonical runner is node --test \"tests/**/*.test.js\".",
+    "Tasks share tests/appbuilder.test.js, so merges serialize one PR at a time.",
+    "Do not change scaffold, plan, or coordination behavior; start/test/review/ship stay placeholders."
+  ]
+}
