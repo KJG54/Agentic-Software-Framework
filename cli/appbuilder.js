@@ -46,6 +46,7 @@ const {
 const { plan } = require("./lib/plan");
 const { scaffold } = require("./lib/scaffold");
 const { templates } = require("./lib/templates");
+const { build } = require("./lib/build");
 
 const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report", "build-manifest", "build-report"];
 
@@ -81,8 +82,9 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
         return scaffold(cwd, args);
       case "templates":
         return templates(cwd, args);
-      case "start":
       case "build":
+        return build(cwd, args);
+      case "start":
       case "test":
       case "review":
       case "ship":
@@ -122,8 +124,11 @@ Planning commands:
   scaffold <slug>          Render the build-type skeleton into build/<slug> (--force to overwrite)
   templates                List available build-type templates (--json for a machine-readable list)
 
+Build commands:
+  build init <slug>        Seed build/<slug>/build-manifest.json with every plan task pending (--force to re-seed)
+
 Later-phase workflow placeholders:
-  start build test review ship`);
+  start test review ship`);
 }
 
 function doctor(cwd) {

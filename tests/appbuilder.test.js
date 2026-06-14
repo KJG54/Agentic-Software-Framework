@@ -756,6 +756,44 @@ test("scaffold fails when build_type is missing or has no template", { timeout: 
   assert.match(noTemplate.stdout + noTemplate.stderr, /template/i);
 });
 
+test("build init seeds a pending manifest from the plan after scaffold", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  const projectDir = path.join(fixture, "projects", "demo-app");
+  writeFilledPlan(projectDir, { build_type: "cli" });
+  run(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
+
+  const result = run(process.execPath, [cliPath, "build", "init", "demo-app"], fixture);
+  assert.match(result.stdout, /demo-app/);
+
+  const buildDir = path.join(fixture, "build", "demo-app");
+  const manifest = JSON.parse(fs.readFileSync(path.join(buildDir, "build-manifest.json"), "utf8"));
+  assert.equal(cli.validateBuildManifest(manifest, fixture).ok, true);
+  // One pending entry per plan task, ids drawn from the task plan.
+  assert.deepEqual(manifest.tasks.map((task) => task.id), ["TASK-001"]);
+  for (const task of manifest.tasks) {
+    assert.equal(task.status, "pending");
+    assert.deepEqual(task.files, []);
+    assert.equal(task.reason, "");
+  }
+
+  // Refuses to overwrite a filled-in manifest without --force; --force re-seeds.
+  const refused = runFail(process.execPath, [cliPath, "build", "init", "demo-app"], fixture);
+  assert.match(refused.stdout + refused.stderr, /already exists|--force/);
+  run(process.execPath, [cliPath, "build", "init", "demo-app", "--force"], fixture);
+});
+
+test("build init refuses to seed a project that was not scaffolded", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  const projectDir = path.join(fixture, "projects", "demo-app");
+  writeFilledPlan(projectDir, { build_type: "cli" });
+
+  // No scaffold step -> no scaffold-report.json -> build init must refuse.
+  const noScaffold = runFail(process.execPath, [cliPath, "build", "init", "demo-app"], fixture);
+  assert.match(noScaffold.stdout + noScaffold.stderr, /scaffold/i);
+});
+
 test("plan seed publishes tasks and skips ids already in the queue", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   run("git", ["init", "-b", "main"], fixture);
