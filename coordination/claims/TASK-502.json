@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-502",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-502-add-scaffold-report-schema-and-register-it-in-do",
+  "claimed_at": "2026-06-14T05:31:04.844Z",
+  "heartbeat_at": "2026-06-14T05:31:04.844Z",
+  "expires_at": "2026-06-14T09:31:04.844Z",
+  "files_touched_estimate": [
+    "contracts/schemas/v1/scaffold-report.schema.json",
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "depends_on": [],
+  "overlap_override": null
+}
