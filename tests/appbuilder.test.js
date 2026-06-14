@@ -635,6 +635,30 @@ test("scaffold renders the game template with a testable pure reducer", { timeou
   assert.equal(rendered.status, 0, rendered.stdout + rendered.stderr);
 });
 
+test("templates lists the available build-type templates (human and --json)", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  // .gitkeep and a malformed manifest must be skipped without crashing.
+  fs.mkdirSync(path.join(fixture, "templates", "broken"), { recursive: true });
+  fs.writeFileSync(path.join(fixture, "templates", "broken", "template.json"), "{ not valid json");
+
+  // Human-readable by default.
+  const human = run(process.execPath, [cliPath, "templates"], fixture);
+  for (const id of ["cli", "library", "app", "game"]) {
+    assert.match(human.stdout, new RegExp(`\\b${id}\\b`), `human output should list ${id}`);
+  }
+  assert.doesNotMatch(human.stdout, /broken/);
+
+  // --json emits a structured list of the valid templates.
+  const json = run(process.execPath, [cliPath, "templates", "--json"], fixture);
+  const list = JSON.parse(json.stdout);
+  assert(Array.isArray(list));
+  const ids = list.map((entry) => entry.id).sort();
+  assert.deepEqual(ids, ["app", "cli", "game", "library"]);
+  for (const entry of list) {
+    assert(entry.name && entry.description, `${entry.id} should carry name + description`);
+  }
+});
+
 test("scaffold fails when build_type is missing or has no template", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);

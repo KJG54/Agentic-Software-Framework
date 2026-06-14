@@ -43,6 +43,7 @@ const {
 } = require("./lib/coordination");
 const { plan } = require("./lib/plan");
 const { scaffold } = require("./lib/scaffold");
+const { templates } = require("./lib/templates");
 
 const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report"];
 
@@ -76,6 +77,8 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
         return plan(cwd, args);
       case "scaffold":
         return scaffold(cwd, args);
+      case "templates":
+        return templates(cwd, args);
       case "start":
       case "build":
       case "test":
@@ -115,6 +118,7 @@ Planning commands:
   plan compile <slug>      Validate requirements and the task plan
   plan seed <slug>         Publish the plan's tasks to the coordination queue
   scaffold <slug>          Render the build-type skeleton into build/<slug> (--force to overwrite)
+  templates                List available build-type templates (--json for a machine-readable list)
 
 Later-phase workflow placeholders:
   start build test review ship`);
