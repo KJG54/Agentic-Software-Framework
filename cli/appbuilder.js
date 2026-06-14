@@ -928,6 +928,22 @@ function changedFilesForHandoff(root) {
   return result.stdout.split(/\r?\n/).filter(Boolean);
 }
 
+function changedFilesWithStatus(root) {
+  const base = git(root, ["merge-base", "HEAD", "main"], { allowFail: true });
+  const args = base.status === 0 && base.stdout.trim()
+    ? ["diff", "--name-status", `${base.stdout.trim()}...HEAD`]
+    : ["diff", "--name-status", "HEAD"];
+  const result = git(root, args, { allowFail: true });
+  if (result.status !== 0) return [];
+  return result.stdout.split(/\r?\n/).filter(Boolean).map((line) => {
+    // name-status lines are "<status>\t<file>", or "<Rxxx|Cxxx>\t<src>\t<dest>" for
+    // renames/copies. Use the last path (the destination) as the file of interest.
+    const parts = line.split("\t");
+    if (parts.length < 2) return null;
+    return { status: parts[0].trim(), file: parts[parts.length - 1].trim() };
+  }).filter((entry) => entry && entry.file);
+}
+
 function compactTimestamp(date) {
   return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 }
@@ -1027,10 +1043,15 @@ function ready(cwd, args) {
     }
   }
 
-  const changedFiles = changedFilesForHandoff(project.root);
-  for (const file of changedFiles) {
-    if (file.startsWith("coordination/") || file.startsWith(".appbuilder/")) failures.push(`Forbidden changed file in task branch: ${file}`);
-    if (looksLikeSecret(file, project.root)) failures.push(`Possible secret in changed file: ${file}`);
+  const changedFiles = changedFilesWithStatus(project.root);
+  for (const { status, file } of changedFiles) {
+    // Deleting leaked coordination/.appbuilder state is the sanctioned cleanup (the
+    // coordination:tracked-state doctor check exists to catch that leak). Only ADDING or
+    // MODIFYING live state on a task branch is forbidden — never go through the tree, use the CLI.
+    if (status !== "D" && (file.startsWith("coordination/") || file.startsWith(".appbuilder/"))) {
+      failures.push(`Forbidden changed file in task branch: ${file}`);
+    }
+    if (status !== "D" && looksLikeSecret(file, project.root)) failures.push(`Possible secret in changed file: ${file}`);
   }
 
   for (const warning of warnings) console.log(`warn ${warning}`);

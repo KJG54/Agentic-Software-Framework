@@ -205,6 +205,45 @@ test("handoff records test results and ready gates on them", { timeout: 30000 },
   assert.match(ok.stdout, /ready for human merge review/);
 });
 
+test("ready allows deleting leaked coordination state but forbids adding it", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run("git", ["init", "-b", "main"], fixture);
+  configureGitUser(fixture);
+  // Simulate leaked live state tracked on main (the bug TASK-401 cleans up).
+  const leaked = path.join(fixture, "coordination", "queue", "TASK-OLD.json");
+  fs.mkdirSync(path.dirname(leaked), { recursive: true });
+  fs.writeFileSync(leaked, JSON.stringify({ id: "TASK-OLD", note: "stale leaked queue entry" }) + "\n");
+  run("git", ["add", "."], fixture);
+  run("git", ["commit", "-m", "initial (with leaked coordination state)"], fixture);
+  run(process.execPath, [cliPath, "init-coordination"], fixture);
+
+  const coord = path.join(fixture, ".appbuilder", "coordination-worktree");
+  fs.writeFileSync(path.join(coord, "coordination", "queue", "TASK-001.json"), JSON.stringify({
+    schema_version: "1.0", id: "TASK-001", title: "Cleanup", depends_on: [], files_touched_estimate: ["coordination/"]
+  }, null, 2));
+  run("git", ["add", "coordination/queue/TASK-001.json"], coord);
+  run("git", ["commit", "-m", "coordination: publish TASK-001"], coord);
+
+  const env = { ...process.env, APPBUILDER_AGENT_ID: "agent-test" };
+  run(process.execPath, [cliPath, "claim", "TASK-001"], fixture, env);
+
+  // Deleting the leaked file on the task branch is the sanctioned cleanup -> not forbidden.
+  run("git", ["rm", "coordination/queue/TASK-OLD.json"], fixture);
+  run("git", ["commit", "-m", "remove leaked coordination state"], fixture);
+  run(process.execPath, [cliPath, "handoff", "--task", "TASK-001", "--status", "complete", "--tests-run", "--tests-passed"], fixture, env);
+  const okReady = run(process.execPath, [cliPath, "ready", "TASK-001"], fixture, env);
+  assert.doesNotMatch(okReady.stdout, /Forbidden changed file/);
+  assert.match(okReady.stdout, /ready for human merge review/);
+
+  // Adding live coordination state on the task branch is still forbidden.
+  fs.mkdirSync(path.join(fixture, "coordination", "claims"), { recursive: true });
+  fs.writeFileSync(path.join(fixture, "coordination", "claims", "TASK-FOO.json"), JSON.stringify({ id: "TASK-FOO", note: "hand-added claim that must be rejected" }) + "\n");
+  run("git", ["add", "coordination/claims/TASK-FOO.json"], fixture);
+  run("git", ["commit", "-m", "leak a claim"], fixture);
+  const blocked = runFail(process.execPath, [cliPath, "ready", "TASK-001"], fixture, env);
+  assert.match(blocked.stdout, /Forbidden changed file in task branch: coordination\/claims\/TASK-FOO\.json/);
+});
+
 test("status derives merged-unreleased claims and orphaned branches", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   run("git", ["init", "-b", "main"], fixture);
