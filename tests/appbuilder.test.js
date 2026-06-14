@@ -500,6 +500,55 @@ test("compile rejects an out-of-enum build_type and accepts a known one", { time
   assert.match(ok.stdout, /passed/);
 });
 
+test("scaffold renders the cli template into build/<slug> with a valid report", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  const projectDir = path.join(fixture, "projects", "demo-app");
+  writeFilledPlan(projectDir, { build_type: "cli" });
+
+  const result = run(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
+  assert.match(result.stdout, /scaffolded demo-app/);
+
+  const buildDir = path.join(fixture, "build", "demo-app");
+  // {{slug}} / {{summary}} substituted in file contents.
+  const pkg = JSON.parse(fs.readFileSync(path.join(buildDir, "package.json"), "utf8"));
+  assert.equal(pkg.name, "demo-app");
+  assert.match(pkg.description, /demo app/i);
+  const indexSrc = fs.readFileSync(path.join(buildDir, "src", "index.js"), "utf8");
+  assert.match(indexSrc, /demo-app/);
+  assert.doesNotMatch(indexSrc, /\{\{slug\}\}/);
+
+  // Report is written, well-formed, and schema-valid.
+  const report = JSON.parse(fs.readFileSync(path.join(buildDir, "scaffold-report.json"), "utf8"));
+  assert.equal(report.build_type, "cli");
+  assert.equal(report.template, "cli");
+  assert.equal(report.output_dir, "build/demo-app");
+  assert(report.rendered_files.includes("src/index.js"));
+  assert(!report.rendered_files.includes("scaffold-report.json"));
+  assert.equal(cli.validateScaffoldReport(report, fixture).ok, true);
+
+  // Refuses to overwrite without --force; --force overwrites.
+  const refused = runFail(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
+  assert.match(refused.stdout + refused.stderr, /already exists|--force/);
+  run(process.execPath, [cliPath, "scaffold", "demo-app", "--force"], fixture);
+});
+
+test("scaffold fails when build_type is missing or has no template", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  const projectDir = path.join(fixture, "projects", "demo-app");
+
+  // Valid plan, but no build_type -> scaffold refuses.
+  writeFilledPlan(projectDir, {});
+  const noType = runFail(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
+  assert.match(noType.stdout + noType.stderr, /build_type/);
+
+  // Valid enum build_type with no authored template -> scaffold refuses.
+  writeFilledPlan(projectDir, { build_type: "app" });
+  const noTemplate = runFail(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
+  assert.match(noTemplate.stdout + noTemplate.stderr, /template/i);
+});
+
 test("plan seed publishes tasks and skips ids already in the queue", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   run("git", ["init", "-b", "main"], fixture);
@@ -735,11 +784,31 @@ function configureGitUser(repo) {
   run("git", ["config", "user.name", "Test Agent"], repo);
 }
 
+function writeFilledPlan(projectDir, extra = {}) {
+  fs.writeFileSync(path.join(projectDir, "requirements.json"), JSON.stringify({
+    schema_version: "1.0",
+    project: "demo-app",
+    summary: "A small demo app.",
+    goals: ["Ship a working slice"],
+    features: [{ name: "core", description: "the core feature" }],
+    constraints: [],
+    ...extra
+  }, null, 2));
+  fs.writeFileSync(path.join(projectDir, "task-plan.json"), JSON.stringify({
+    schema_version: "1.0",
+    project: "demo-app",
+    tasks: [
+      { schema_version: "1.0", id: "TASK-001", title: "Build core", files_touched_estimate: ["src/"], depends_on: [] }
+    ]
+  }, null, 2));
+}
+
 function makeFixture() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "appbuilder-test-"));
   copyFile("appbuilder.json", dir);
   copyDir("contracts", dir);
   copyDir("cli", dir);
+  copyDir("templates", dir);
   fs.mkdirSync(path.join(dir, "docs"), { recursive: true });
   fs.mkdirSync(path.join(dir, "tests"), { recursive: true });
   fs.mkdirSync(path.join(dir, ".agent", "rules"), { recursive: true });

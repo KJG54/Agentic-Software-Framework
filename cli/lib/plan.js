@@ -189,5 +189,6 @@ function normalizeQueueTask(task) {
 }
 
 module.exports = {
-  plan
+  plan,
+  compilePlan
 };

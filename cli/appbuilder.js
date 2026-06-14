@@ -42,6 +42,7 @@ const {
   pathsOverlap
 } = require("./lib/coordination");
 const { plan } = require("./lib/plan");
+const { scaffold } = require("./lib/scaffold");
 
 const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report"];
 
@@ -73,8 +74,9 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
         return events(cwd);
       case "plan":
         return plan(cwd, args);
-      case "start":
       case "scaffold":
+        return scaffold(cwd, args);
+      case "start":
       case "build":
       case "test":
       case "review":
@@ -112,9 +114,10 @@ Planning commands:
   plan new <slug>          Scaffold a project plan (requirements, architecture, task-plan)
   plan compile <slug>      Validate requirements and the task plan
   plan seed <slug>         Publish the plan's tasks to the coordination queue
+  scaffold <slug>          Render the build-type skeleton into build/<slug> (--force to overwrite)
 
 Later-phase workflow placeholders:
-  start scaffold build test review ship`);
+  start build test review ship`);
 }
 
 function doctor(cwd) {
