@@ -11,12 +11,14 @@ The first implementation batch focuses on the multi-agent coordination foundatio
 ## Quickstart
 
 ```bash
-node --test                       # run the test suite (canonical, cross-platform)
+node --test "tests/**/*.test.js"  # run the test suite (canonical, cross-platform)
 node cli/appbuilder.js doctor
 ```
 
-> On Windows, prefer `node --test` over `npm test`: PowerShell's execution policy can block the
-> `npm.ps1` shim. If you want the npm script, `npm.cmd test` works from PowerShell.
+> The glob scopes the runner to the framework's own tests under `tests/`, so generated template
+> stubs (e.g. `build/<slug>/test/*.test.js` from `scaffold`) are never picked up. `npm test`
+> runs the same command. On Windows, prefer `node --test` over `npm test`: PowerShell's
+> execution policy can block the `npm.ps1` shim; `npm.cmd test` also works from PowerShell.
 
 In a Git repository with at least one commit:
 
@@ -55,4 +57,18 @@ requirements are filled and the task plan is internally consistent before `seed`
 tasks to the human-reviewed coordination queue. See [HOWTO.md](HOWTO.md) for the full operator
 walkthrough.
 
-The workflow commands `start`, `scaffold`, `build`, `test`, `review`, and `ship` are present as placeholders for later phases.
+## Scaffold
+
+```bash
+appbuilder scaffold <slug>          # render the build-type skeleton into build/<slug>
+appbuilder scaffold <slug> --force  # overwrite an existing build/<slug>
+```
+
+`scaffold` deterministically renders a project skeleton from the approved plan into
+`build/<slug>/` — no LLM, just a template file-tree copy plus simple `{{slug}}`/`{{summary}}`
+substitution from `requirements.json`. It reads `requirements.build_type` (one of `game`, `cli`,
+`app`, `library`, `other`; enum-validated at `compile`) to pick a template from `templates/`,
+gates on `plan compile` first, and writes a validated `build/<slug>/scaffold-report.json`. A
+`cli` template ships today; other build types are added in later slices.
+
+The workflow commands `start`, `build`, `test`, `review`, and `ship` are present as placeholders for later phases.
