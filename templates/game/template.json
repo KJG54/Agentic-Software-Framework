@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "id": "game",
+  "name": "Terminal Game",
+  "description": "A minimal, zero-dependency terminal game skeleton: a pure reducer plus a thin stdin loop.",
+  "tags": ["game", "terminal", "node"],
+  "required_files": ["package.json", "README.md", ".gitignore", "src/game.js", "src/index.js", "test/game.test.js"]
+}
