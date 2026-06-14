@@ -466,7 +466,7 @@ test("plan compile gates on filled requirements and a consistent task plan", { t
   assert.match(dangling.stdout + dangling.stderr, /TASK-999|depends_on/);
 });
 
-test("compile rejects an out-of-enum build_type and accepts a known one", { timeout: 30000 }, () => {
+test("compile validates build_type format and is dir-driven, not enum-bound", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
   const projectDir = path.join(fixture, "projects", "demo-app");
@@ -489,15 +489,26 @@ test("compile rejects an out-of-enum build_type and accepts a known one", { time
     ]
   }, null, 2));
 
-  // An out-of-enum build_type is rejected at compile.
-  fs.writeFileSync(requirementsPath, requirementsWith({ build_type: "banana" }));
+  // A malformed build_type (not a slug) is rejected at compile.
+  fs.writeFileSync(requirementsPath, requirementsWith({ build_type: "Not A Slug" }));
   const bad = runFail(process.execPath, [cliPath, "plan", "compile", "demo-app"], fixture);
   assert.match(bad.stdout + bad.stderr, /build_type/);
+
+  // build_type is dir-driven: any well-formed slug compiles, even one with no template yet.
+  // (Template availability is enforced later, by scaffold — not by the requirements schema.)
+  fs.writeFileSync(requirementsPath, requirementsWith({ build_type: "widget" }));
+  const novel = run(process.execPath, [cliPath, "plan", "compile", "demo-app"], fixture);
+  assert.match(novel.stdout, /passed/);
 
   // A known build_type compiles.
   fs.writeFileSync(requirementsPath, requirementsWith({ build_type: "cli" }));
   const ok = run(process.execPath, [cliPath, "plan", "compile", "demo-app"], fixture);
   assert.match(ok.stdout, /passed/);
+
+  // An omitted build_type still compiles (the field stays optional).
+  fs.writeFileSync(requirementsPath, requirementsWith({}));
+  const omitted = run(process.execPath, [cliPath, "plan", "compile", "demo-app"], fixture);
+  assert.match(omitted.stdout, /passed/);
 });
 
 test("scaffold renders the cli template into build/<slug> with a valid report", { timeout: 30000 }, () => {
