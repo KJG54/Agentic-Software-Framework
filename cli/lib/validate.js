@@ -43,6 +43,10 @@ function validateTaskPlan(doc, root) {
   return validateJsonArtifact(validationRoot(root), "task-plan", doc);
 }
 
+function validateScaffoldReport(report, root) {
+  return validateJsonArtifact(validationRoot(root), "scaffold-report", report);
+}
+
 function validateHandoff(file, root) {
   const text = fs.readFileSync(file, "utf8");
   const parsed = parseFrontmatter(text);
@@ -120,6 +124,7 @@ module.exports = {
   validateRegistryEntry,
   validateRequirements,
   validateTaskPlan,
+  validateScaffoldReport,
   validateHandoff,
   parseFrontmatter,
   unquote,

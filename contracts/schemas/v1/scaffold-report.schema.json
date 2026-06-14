@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://app-builder.local/contracts/schemas/v1/scaffold-report.schema.json",
+  "title": "Scaffold Report",
+  "type": "object",
+  "required": ["schema_version", "project", "build_type", "template", "generated_at", "output_dir", "rendered_files"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "project": { "type": "string", "minLength": 1 },
+    "build_type": { "enum": ["game", "cli", "app", "library", "other"] },
+    "template": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "output_dir": { "type": "string", "minLength": 1 },
+    "rendered_files": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "additionalProperties": false
+}
