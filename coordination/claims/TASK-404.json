@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-404",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-404-modularize-cli-appbuilder-js-into-cli-lib-module",
+  "claimed_at": "2026-06-14T01:51:44.129Z",
+  "heartbeat_at": "2026-06-14T01:51:44.129Z",
+  "expires_at": "2026-06-14T05:51:44.129Z",
+  "files_touched_estimate": [
+    "cli/appbuilder.js",
+    "cli/lib/git.js",
+    "cli/lib/coordination.js",
+    "cli/lib/plan.js",
+    "cli/lib/validate.js"
+  ],
+  "depends_on": [
+    "TASK-401",
+    "TASK-403"
+  ],
+  "overlap_override": null
+}
