@@ -544,6 +544,37 @@ test("scaffold renders the cli template into build/<slug> with a valid report", 
   run(process.execPath, [cliPath, "scaffold", "demo-app", "--force"], fixture);
 });
 
+test("scaffold renders the library template into a working module", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  const projectDir = path.join(fixture, "projects", "demo-app");
+  writeFilledPlan(projectDir, { build_type: "library" });
+
+  const result = run(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
+  assert.match(result.stdout, /scaffolded demo-app/);
+
+  const buildDir = path.join(fixture, "build", "demo-app");
+  // A library exposes a module entry, not a CLI bin.
+  const pkg = JSON.parse(fs.readFileSync(path.join(buildDir, "package.json"), "utf8"));
+  assert.equal(pkg.name, "demo-app");
+  assert.equal(pkg.main, "src/index.js");
+  assert.equal(pkg.bin, undefined);
+  const indexSrc = fs.readFileSync(path.join(buildDir, "src", "index.js"), "utf8");
+  assert.doesNotMatch(indexSrc, /\{\{\w+\}\}/);
+
+  // Report reflects the library template and is schema-valid.
+  const report = JSON.parse(fs.readFileSync(path.join(buildDir, "scaffold-report.json"), "utf8"));
+  assert.equal(report.build_type, "library");
+  assert.equal(report.template, "library");
+  assert(report.rendered_files.includes("src/index.js"));
+  assert(report.rendered_files.includes("test/index.test.js"));
+  assert.equal(cli.validateScaffoldReport(report, fixture).ok, true);
+
+  // The rendered module ships a passing test.
+  const rendered = spawnSync(process.execPath, ["--test", "test/index.test.js"], { cwd: buildDir, encoding: "utf8", stdio: "pipe" });
+  assert.equal(rendered.status, 0, rendered.stdout + rendered.stderr);
+});
+
 test("scaffold fails when build_type is missing or has no template", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);

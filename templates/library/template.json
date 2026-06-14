@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "id": "library",
+  "name": "Node Library",
+  "description": "A minimal, zero-dependency Node.js library skeleton with an exported module entry and a test.",
+  "tags": ["library", "node"],
+  "required_files": ["package.json", "README.md", ".gitignore", "src/index.js", "test/index.test.js"]
+}
