@@ -30,7 +30,7 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
       case "doctor":
         return doctor(cwd);
       case "status":
-        return status(cwd);
+        return status(cwd, args);
       case "claim":
         return claim(cwd, args);
       case "release":
@@ -532,21 +532,63 @@ function walk(root, options = {}) {
   return found;
 }
 
-function status(cwd) {
+function status(cwd, args = []) {
+  const human = args.includes("--human");
   const project = loadProject(cwd);
   let worktree;
   try {
     worktree = ensureCoordinationWorktree(project);
   } catch (error) {
     const generated = baseStatus(project, error.message);
-    console.log(JSON.stringify(generated, null, 2));
+    emitStatus(generated, human);
     return 1;
   }
   const generated = deriveStatus(project, worktree);
   const outputPath = path.join(worktree, project.config.generated_dir, "project-status.json");
   writeJson(outputPath, generated);
-  console.log(JSON.stringify(generated, null, 2));
+  emitStatus(generated, human);
   return generated.blockers.length ? 1 : 0;
+}
+
+// JSON is the default (agents parse it); --human prints a table for human operators. The
+// project-status.json artifact is written either way, so the machine contract is unchanged.
+function emitStatus(generated, human) {
+  console.log(human ? renderStatusTable(generated) : JSON.stringify(generated, null, 2));
+}
+
+function renderStatusTable(generated) {
+  const rows = [];
+  for (const t of generated.active_tasks || []) rows.push({ task: t.id, state: "active", branch: t.branch || "-", expires: relExpiry(t.claim_expires), action: "work / handoff" });
+  for (const c of generated.expired_claims || []) rows.push({ task: c.id, state: "expired", branch: "-", expires: relExpiry(c.claim_expires), action: "release --expired" });
+  for (const c of generated.merged_unreleased_claims || []) rows.push({ task: c.id, state: "merged", branch: c.branch || "-", expires: "-", action: "release" });
+  for (const b of generated.orphaned_branches || []) rows.push({ task: "-", state: "orphan", branch: b, expires: "-", action: "prune branch" });
+
+  const lines = [`App Builder status — ${generated.active_project} (${generated.current_phase})`, ""];
+  if (rows.length === 0) {
+    lines.push("(clean — no active claims or orphaned branches)");
+  } else {
+    const cols = [["task", "TASK"], ["state", "STATE"], ["branch", "BRANCH"], ["expires", "EXPIRES"], ["action", "NEXT ACTION"]];
+    const widths = cols.map(([key, head]) => Math.max(head.length, ...rows.map((r) => String(r[key]).length)));
+    const fmt = (vals) => vals.map((v, i) => String(v).padEnd(widths[i])).join("  ").replace(/\s+$/, "");
+    lines.push(fmt(cols.map(([, head]) => head)));
+    for (const r of rows) lines.push(fmt(cols.map(([key]) => r[key])));
+  }
+  if ((generated.blockers || []).length) {
+    lines.push("", "blockers:");
+    for (const b of generated.blockers) lines.push(`  - ${b}`);
+  }
+  return lines.join("\n");
+}
+
+function relExpiry(iso) {
+  if (!iso) return "-";
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return String(iso);
+  const diff = ms - Date.now();
+  const mins = Math.round(Math.abs(diff) / 60000);
+  const [n, unit] = mins >= 1440 ? [Math.round(mins / 1440), "d"] : mins >= 60 ? [Math.round(mins / 60), "h"] : [mins, "m"];
+  if (mins < 1) return "now";
+  return diff >= 0 ? `in ${n}${unit}` : `${n}${unit} ago`;
 }
 
 function baseStatus(project, blocker) {

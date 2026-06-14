@@ -244,6 +244,38 @@ test("ready allows deleting leaked coordination state but forbids adding it", { 
   assert.match(blocked.stdout, /Forbidden changed file in task branch: coordination\/claims\/TASK-FOO\.json/);
 });
 
+test("status emits JSON by default and a table with --human", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run("git", ["init", "-b", "main"], fixture);
+  configureGitUser(fixture);
+  run("git", ["add", "."], fixture);
+  run("git", ["commit", "-m", "initial"], fixture);
+  run(process.execPath, [cliPath, "init-coordination"], fixture);
+
+  const coord = path.join(fixture, ".appbuilder", "coordination-worktree");
+  fs.writeFileSync(path.join(coord, "coordination", "queue", "TASK-001.json"), JSON.stringify({
+    schema_version: "1.0", id: "TASK-001", title: "Update docs", depends_on: [], files_touched_estimate: ["docs/"]
+  }, null, 2));
+  run("git", ["add", "coordination/queue/TASK-001.json"], coord);
+  run("git", ["commit", "-m", "coordination: publish TASK-001"], coord);
+
+  const env = { ...process.env, APPBUILDER_AGENT_ID: "agent-test" };
+  run(process.execPath, [cliPath, "claim", "TASK-001"], fixture, env);
+
+  // Default output is still the JSON contract agents parse.
+  const jsonOut = run(process.execPath, [cliPath, "status"], fixture, env).stdout;
+  const parsed = JSON.parse(jsonOut);
+  assert.equal(parsed.active_tasks[0].id, "TASK-001");
+
+  // --human renders a table: the task id, its branch, the active state, and a next action.
+  const humanOut = run(process.execPath, [cliPath, "status", "--human"], fixture, env).stdout;
+  assert.doesNotMatch(humanOut, /^\s*\{/);
+  assert.match(humanOut, /TASK-001/);
+  assert.match(humanOut, /agent\/TASK-001/);
+  assert.match(humanOut, /active/);
+  assert.match(humanOut, /NEXT ACTION/);
+});
+
 test("status derives merged-unreleased claims and orphaned branches", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   run("git", ["init", "-b", "main"], fixture);
