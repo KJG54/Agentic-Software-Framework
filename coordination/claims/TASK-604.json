@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-604",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-604-author-the-game-build-type-template",
+  "claimed_at": "2026-06-14T20:18:53.087Z",
+  "heartbeat_at": "2026-06-14T20:18:53.087Z",
+  "expires_at": "2026-06-15T00:18:53.087Z",
+  "files_touched_estimate": [
+    "templates/game/template.json",
+    "templates/game/files/package.json",
+    "templates/game/files/README.md",
+    "templates/game/files/.gitignore",
+    "templates/game/files/src/game.js",
+    "templates/game/files/src/index.js",
+    "templates/game/files/test/game.test.js",
+    "tests/appbuilder.test.js"
+  ],
+  "depends_on": [],
+  "overlap_override": null
+}
