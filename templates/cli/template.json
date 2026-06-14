@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "id": "cli",
+  "name": "Node CLI",
+  "description": "A minimal, zero-dependency Node.js command-line tool skeleton.",
+  "tags": ["cli", "node"],
+  "required_files": ["package.json", "README.md", ".gitignore", "src/index.js", "test/index.test.js"]
+}

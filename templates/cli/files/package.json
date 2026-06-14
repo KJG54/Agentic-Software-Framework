@@ -1,0 +1,13 @@
+{
+  "name": "{{slug}}",
+  "version": "0.1.0",
+  "description": "{{summary}}",
+  "type": "commonjs",
+  "bin": {
+    "{{slug}}": "src/index.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT"
+}
