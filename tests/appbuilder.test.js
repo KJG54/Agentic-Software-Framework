@@ -961,6 +961,78 @@ test("build gate rejects pending, missing files, reasonless skips, id mismatch, 
   expectFail(/README\.md|scaffold/i);
 });
 
+// Drive a project all the way through scaffold -> build so the test phase has something to run.
+function buildDemoApp(fixture) {
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  writeFilledPlan(path.join(fixture, "projects", "demo-app"), { build_type: "cli" });
+  run(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
+  run(process.execPath, [cliPath, "build", "init", "demo-app"], fixture);
+  const buildDir = path.join(fixture, "build", "demo-app");
+  const manifestPath = path.join(buildDir, "build-manifest.json");
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  manifest.tasks = [{ id: "TASK-001", status: "done", files: ["src/index.js"], reason: "" }];
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  run(process.execPath, [cliPath, "build", "demo-app"], fixture);
+  return buildDir;
+}
+
+test("test runs the built project's suite and writes a passing report", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  const buildDir = buildDemoApp(fixture);
+
+  // The cli template ships one passing test -> the test phase passes and writes a report.
+  const result = run(process.execPath, [cliPath, "test", "demo-app"], fixture);
+  assert.match(result.stdout, /passed=1/);
+
+  const report = JSON.parse(fs.readFileSync(path.join(buildDir, "test-report.json"), "utf8"));
+  assert.equal(cli.validateTestReport(report, fixture).ok, true);
+  assert(report.tests_total >= 1);
+  assert.equal(report.tests_passed, report.tests_total);
+  assert.equal(report.tests_failed, 0);
+  assert.match(report.command, /node --test/);
+});
+
+test("test gate fails on missing build-report, a failing test, and zero tests", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  writeFilledPlan(path.join(fixture, "projects", "demo-app"), { build_type: "cli" });
+  run(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
+
+  const buildDir = path.join(fixture, "build", "demo-app");
+  const reportPath = path.join(buildDir, "test-report.json");
+
+  // No build-report yet -> the precondition gate fails and writes nothing.
+  const noBuild = runFail(process.execPath, [cliPath, "test", "demo-app"], fixture);
+  assert.match(noBuild.stdout + noBuild.stderr, /build/i);
+  assert(!fs.existsSync(reportPath), "no report before the build phase");
+
+  // Finish the build so the precondition passes.
+  run(process.execPath, [cliPath, "build", "init", "demo-app"], fixture);
+  const manifestPath = path.join(buildDir, "build-manifest.json");
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  manifest.tasks = [{ id: "TASK-001", status: "done", files: ["src/index.js"], reason: "" }];
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  run(process.execPath, [cliPath, "build", "demo-app"], fixture);
+
+  // A failing test -> gate fails, no report.
+  const testFile = path.join(buildDir, "test", "index.test.js");
+  fs.writeFileSync(testFile, [
+    'const test = require("node:test");',
+    'const assert = require("node:assert/strict");',
+    'test("intentionally fails", () => { assert.equal(1, 2); });',
+    ""
+  ].join("\n"));
+  const red = runFail(process.execPath, [cliPath, "test", "demo-app"], fixture);
+  assert.match(red.stdout + red.stderr, /fail test:/);
+  assert(!fs.existsSync(reportPath), "no report on a failing run");
+
+  // Zero tests -> gate fails, no report (a test-first build must never green on nothing).
+  fs.rmSync(testFile);
+  const empty = runFail(process.execPath, [cliPath, "test", "demo-app"], fixture);
+  assert.match(empty.stdout + empty.stderr, /no tests found/i);
+  assert(!fs.existsSync(reportPath), "no report when no tests ran");
+});
+
 test("plan seed publishes tasks and skips ids already in the queue", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   run("git", ["init", "-b", "main"], fixture);

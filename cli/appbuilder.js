@@ -48,6 +48,7 @@ const { plan } = require("./lib/plan");
 const { scaffold } = require("./lib/scaffold");
 const { templates } = require("./lib/templates");
 const { build } = require("./lib/build");
+const { test } = require("./lib/test");
 
 const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report", "build-manifest", "build-report", "test-report"];
 
@@ -85,8 +86,9 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
         return templates(cwd, args);
       case "build":
         return build(cwd, args);
-      case "start":
       case "test":
+        return test(cwd, args);
+      case "start":
       case "review":
       case "ship":
         console.log(`${command} is reserved for a later phase. Coordination commands are available now.`);
@@ -129,8 +131,11 @@ Build commands:
   build init <slug>        Seed build/<slug>/build-manifest.json with every plan task pending (--force to re-seed)
   build <slug>             Validate the filled-in manifest and write build/<slug>/build-report.json
 
+Test commands:
+  test <slug>              Run the built project's tests and write build/<slug>/test-report.json
+
 Later-phase workflow placeholders:
-  start test review ship`);
+  start review ship`);
 }
 
 function doctor(cwd) {
