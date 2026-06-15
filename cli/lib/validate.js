@@ -67,6 +67,10 @@ function validateShipChecklist(frontmatter, root) {
   return validateMarkdownArtifact(validationRoot(root), "ship-checklist", frontmatter);
 }
 
+function validateAdr(frontmatter, root) {
+  return validateMarkdownArtifact(validationRoot(root), "adr", frontmatter);
+}
+
 function validateHandoff(file, root) {
   const text = fs.readFileSync(file, "utf8");
   const parsed = parseFrontmatter(text);
@@ -150,6 +154,7 @@ module.exports = {
   validateTestReport,
   validateReviewReport,
   validateShipChecklist,
+  validateAdr,
   validateHandoff,
   parseFrontmatter,
   unquote,

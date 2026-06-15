@@ -403,7 +403,50 @@ them; they are a reminder list for the human shipping the release. Because they 
 and `review init`), so a re-run never wipes your go-live progress. A checklist on disk always means
 the full-chain gate passed.
 
-## 8. How work gets done
+## 8. Record an architecture decision (ADR)
+
+Design decisions that shape the framework (or a project) belong in a durable, greppable record
+rather than scattered across chat logs or one-off spec files. `decision add` writes an
+**Architecture Decision Record** — markdown with validated frontmatter — to
+`vault/framework/decisions/`. Like every artifact-writing verb it has **no LLM**: you supply the
+fields, the CLI validates them and only then writes the file, so a malformed ADR never lands.
+
+```bash
+appbuilder decision add \
+  --title "Use file-based memory before any vector DB" \
+  --context "We need a memory layer but want to avoid premature infrastructure." \
+  --decision "Start file-based and keyword-searched; add a vector DB only on a measured need." \
+  --consequences "Simple, greppable, zero infra; revisit via a follow-up ADR if the corpus grows." \
+  --status accepted \
+  --option "Chroma + Docker from day one (rejected: heavy, premature)" \
+  --option "No memory at all (rejected: it is the spec's centerpiece)"
+```
+
+What happens:
+
+- **Required flags:** `--title`, `--context`, `--decision`, `--consequences`. Missing any one
+  fails loudly (`decision add is missing required flags: …`) and writes nothing.
+- **Optional flags:** `--status` (`proposed` | `accepted` | `superseded` | `deprecated`; defaults
+  to `accepted`), `--date` (defaults to today, `YYYY-MM-DD`), and `--option` (repeatable — each
+  records one alternative you weighed).
+- **Auto-numbered id:** the CLI scans existing records and assigns the next `ADR-NNNN`, so the
+  first is `ADR-0001`, the next `ADR-0002`, and so on. It prints the id and the written path:
+
+  ```text
+  decision ADR-0003
+  adr=vault/framework/decisions/ADR-0003-use-file-based-memory-before-any-vector-db.md
+  ```
+
+The frontmatter (`id`, `title`, `status`, `context`, `decision`, `consequences`, `date`,
+`options_considered`) is validated against `contracts/schemas/v1/adr.schema.json` **before**
+writing, and the body repeats the same content as readable `## Context` / `## Decision` /
+`## Options considered` / `## Consequences` sections. ADRs live on the working branch (and in the
+Obsidian vault), so they ride the normal task-branch PR to `main` — never the coordination branch.
+
+> When a later decision overrides an earlier one, write a new ADR and set the old one's `status`
+> to `superseded` (re-add it with `--status superseded`, or edit the file's frontmatter).
+
+## 9. How work gets done
 
 Once tasks are in the queue, an agent (or you) runs the coordination loop per task:
 

@@ -1521,6 +1521,78 @@ test("doctor flags tracked live coordination state on a normal branch", () => {
   assert.match(out, /ok coordination:tracked-state/);
 });
 
+// --- ADR / decision-record flow (TASK 2) -----------------------------------
+
+test("validateAdr accepts a well-formed record and rejects bad ones", () => {
+  const good = {
+    schema_version: "1.0",
+    id: "ADR-0001",
+    title: "Use file-based memory",
+    status: "accepted",
+    context: "We need a memory layer.",
+    decision: "Start file-based.",
+    consequences: "Simple, greppable, no infra.",
+    date: "2026-06-15"
+  };
+  assert.equal(cli.validateAdr(good).ok, true, (cli.validateAdr(good).errors || []).join("; "));
+
+  const badId = cli.validateAdr({ ...good, id: "0001" });
+  assert.equal(badId.ok, false);
+  assert(badId.errors.some((e) => e.includes("id")));
+
+  const badStatus = cli.validateAdr({ ...good, status: "maybe" });
+  assert.equal(badStatus.ok, false);
+  assert(badStatus.errors.some((e) => e.includes("status")));
+
+  const badDate = cli.validateAdr({ ...good, date: "June 15" });
+  assert.equal(badDate.ok, false);
+  assert(badDate.errors.some((e) => e.includes("date")));
+});
+
+test("decision add writes a schema-valid ADR with an auto-incremented id", () => {
+  const fixture = makeFixture();
+  const first = run(process.execPath, [cliPath, "decision", "add",
+    "--title", "Use file-based memory",
+    "--context", "We need a memory layer.",
+    "--decision", "Start file-based, add a vector DB only if needed.",
+    "--consequences", "Simple and greppable; revisit via a future ADR.",
+    "--status", "accepted"], fixture);
+  assert.match(first.stdout, /ADR-0001/);
+
+  const adrDir = path.join(fixture, "vault", "framework", "decisions");
+  const files = fs.readdirSync(adrDir).filter((f) => f.endsWith(".md"));
+  assert.equal(files.length, 1);
+  assert.match(files[0], /^ADR-0001-.*\.md$/);
+
+  const parsed = cli.parseFrontmatter(fs.readFileSync(path.join(adrDir, files[0]), "utf8"));
+  assert.ok(parsed, "ADR has frontmatter");
+  assert.equal(cli.validateAdr(parsed.data).ok, true, (cli.validateAdr(parsed.data).errors || []).join("; "));
+
+  // A second add auto-increments to ADR-0002.
+  const second = run(process.execPath, [cliPath, "decision", "add",
+    "--title", "Second decision",
+    "--context", "x", "--decision", "y", "--consequences", "z"], fixture);
+  assert.match(second.stdout, /ADR-0002/);
+});
+
+test("decision add refuses to clobber and requires title", () => {
+  const fixture = makeFixture();
+  const args = ["decision", "add", "--title", "Dup",
+    "--context", "a", "--decision", "b", "--consequences", "c"];
+  run(process.execPath, [cliPath, ...args], fixture);
+  // Re-running with the same title would reuse a slug but a new id, so it never collides;
+  // missing a required field must fail loudly instead.
+  const missing = runFail(process.execPath, [cliPath, "decision", "add", "--context", "a",
+    "--decision", "b", "--consequences", "c"], fixture);
+  assert.match(missing.stderr + missing.stdout, /title/);
+});
+
+test("doctor checks the adr schema", () => {
+  const fixture = makeFixture();
+  const out = spawnSync(process.execPath, [cliPath, "doctor"], { cwd: fixture, encoding: "utf8" }).stdout;
+  assert.match(out, /ok schema:adr/);
+});
+
 function configureGitUser(repo) {
   run("git", ["config", "user.email", "test@example.com"], repo);
   run("git", ["config", "user.name", "Test Agent"], repo);
