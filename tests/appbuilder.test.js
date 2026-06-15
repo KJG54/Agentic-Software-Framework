@@ -752,6 +752,39 @@ test("plan compile gates on the stack decision (Checkpoint 3)", { timeout: 30000
   assert.match(ok.stdout, /passed/);
 });
 
+// --- enriched requirements schema (TASK 6) ---------------------------------
+
+test("requirements schema accepts the new optional fields and stays backward-compatible", () => {
+  const base = {
+    schema_version: "1.0",
+    project: "demo-app",
+    summary: "A small demo app.",
+    goals: ["Ship a slice"],
+    features: [{ name: "core" }],
+    constraints: []
+  };
+  // Backward-compatible: a doc without the new fields still validates.
+  assert.equal(schemaValidator.validateJsonArtifact(repoRoot, "requirements", base).ok, true);
+
+  // The new discrete fields are accepted.
+  const enriched = {
+    ...base,
+    out_of_scope: ["No mobile app"],
+    security: ["No secrets in logs"],
+    performance: ["First caption < 2s"],
+    timeline: "2 weeks",
+    success_criteria: ["Captions render on real audio"]
+  };
+  const enrichedResult = schemaValidator.validateJsonArtifact(repoRoot, "requirements", enriched);
+  assert.equal(enrichedResult.ok, true, (enrichedResult.errors || []).join("; "));
+
+  // Wrong types for the new fields are rejected.
+  const badTimeline = schemaValidator.validateJsonArtifact(repoRoot, "requirements", { ...base, timeline: 14 });
+  assert.equal(badTimeline.ok, false);
+  const badScope = schemaValidator.validateJsonArtifact(repoRoot, "requirements", { ...base, out_of_scope: "nope" });
+  assert.equal(badScope.ok, false);
+});
+
 test("scaffold renders the cli template into build/<slug> with a valid report", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
