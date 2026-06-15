@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0",
+  "project": "translator-app",
+  "build_type": "app",
+  "summary": "A Windows desktop overlay that captures system (loopback) audio, transcribes and translates it in real time, and displays the translation as subtitles over any application. Starts with Japanese-to-English for anime on streaming services like Prime, and is architected so any-language-to-any-language is a later extension.",
+  "goals": [
+    "Low-latency captions that are readable in real time",
+    "Accurate translation",
+    "Unobtrusive full-screen, transparent, click-through, always-on-top overlay that shows only subtitles",
+    "Japanese-to-English now, architected so any-language-to-any-language is a later extension",
+    "Runs on Windows, uses the GPU, and is built only from free/open-source tooling"
+  ],
+  "features": [
+    {
+      "name": "Windows executable launch",
+      "description": "The app is started from a packaged Windows .exe (no terminal or dev tooling required to run it)."
+    },
+    {
+      "name": "Audio source selection",
+      "description": "On launch the user picks which audio device to listen from, then the app starts capturing."
+    },
+    {
+      "name": "WASAPI loopback capture",
+      "description": "Captures the system audio coming out of the selected device (what is currently playing), not microphone input."
+    },
+    {
+      "name": "Real-time Japanese speech recognition",
+      "description": "Transcribes the captured Japanese audio in near real time using faster-whisper on the GPU (CUDA)."
+    },
+    {
+      "name": "Japanese-to-English translation",
+      "description": "Produces English text from the Japanese audio via Whisper's translate task; structured so additional language pairs can be added later."
+    },
+    {
+      "name": "Full-screen subtitle overlay",
+      "description": "A full-screen, fully transparent, click-through, always-on-top window that renders only the subtitle text over whatever application is running."
+    },
+    {
+      "name": "Auto-hiding settings bar",
+      "description": "A settings bar pinned to the top of the screen that stays hidden and only appears when the mouse hovers over its region."
+    },
+    {
+      "name": "Settings controls",
+      "description": "The settings bar exposes language pair, subtitle appearance (font size, position, background opacity), a latency-vs-accuracy control (Whisper model size), and exit."
+    },
+    {
+      "name": "Exit controls",
+      "description": "The app can be stopped from the settings bar or via an exit button in the top-right corner."
+    },
+    {
+      "name": "Set-and-forget operation",
+      "description": "After device selection the app runs unattended; no interaction is required during normal use."
+    },
+    {
+      "name": "Ephemeral settings",
+      "description": "Settings are not persisted; every launch starts from defaults."
+    }
+  ],
+  "constraints": [
+    "Windows only",
+    "Python plus a CUDA-capable GPU",
+    "Free/open-source tooling only",
+    "Solo user, no authentication, occasional use",
+    "No settings persistence: fresh defaults every launch",
+    "v1 scope-out: Japanese-to-English only (any-to-any deferred)",
+    "v1 scope-out: a single audio source at a time",
+    "Does not use the framework's scaffold templates (zero-dependency Node only); the Python skeleton is built by hand"
+  ]
+}
