@@ -31,6 +31,7 @@ const {
   validateTestReport,
   validateReviewReport,
   validateShipChecklist,
+  validateAdr,
   parseFrontmatter
 } = require("./lib/validate");
 const {
@@ -53,8 +54,9 @@ const { build } = require("./lib/build");
 const { test } = require("./lib/test");
 const { review } = require("./lib/review");
 const { ship } = require("./lib/ship");
+const { decision } = require("./lib/decision");
 
-const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report", "build-manifest", "build-report", "test-report", "review-report", "ship-checklist"];
+const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report", "build-manifest", "build-report", "test-report", "review-report", "ship-checklist", "adr"];
 
 function main(argv = process.argv.slice(2), cwd = process.cwd()) {
   const command = argv[0] || "help";
@@ -96,6 +98,8 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
         return review(cwd, args);
       case "ship":
         return ship(cwd, args);
+      case "decision":
+        return decision(cwd, args);
       default:
         console.error(`Unknown command: ${command}`);
         printHelp();
@@ -142,7 +146,10 @@ Review commands:
   review <slug>            Validate the filled-in review and gate on decision: approved
 
 Ship commands:
-  ship <slug>              Verify the full chain and write build/<slug>/ship-checklist.md (--force to regenerate)`);
+  ship <slug>              Verify the full chain and write build/<slug>/ship-checklist.md (--force to regenerate)
+
+Decision-record commands:
+  decision add ...         Write an ADR to vault/framework/decisions/ (--title --context --decision --consequences [--status --date --option])`);
 }
 
 function doctor(cwd) {
@@ -323,6 +330,7 @@ module.exports = {
   validateTestReport,
   validateReviewReport,
   validateShipChecklist,
+  validateAdr,
   parseFrontmatter,
   buildHandoffMarkdown,
   pathsOverlap,
