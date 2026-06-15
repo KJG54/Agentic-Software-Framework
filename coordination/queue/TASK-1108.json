@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-1108",
+  "title": "Auto-hiding settings bar",
+  "description": "Add a top-of-screen settings bar that stays hidden and reveals on hover, exposing language pair, subtitle appearance (font size, position, opacity), latency-vs-accuracy model size, and exit.",
+  "depends_on": [
+    "TASK-1106"
+  ],
+  "files_touched_estimate": [
+    "projects/translator-app/src/translator_app/ui/settings_bar.py",
+    "projects/translator-app/tests/test_settings_bar.py"
+  ],
+  "acceptance_criteria": [
+    "Bar is hidden by default and appears on hover at the top region",
+    "Exposes language pair, font size, position, opacity, model size, and exit",
+    "Control state changes emit events the app can subscribe to"
+  ]
+}

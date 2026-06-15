@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-1103",
+  "title": "WASAPI loopback capture stream",
+  "description": "Capture system audio from the selected device via WASAPI loopback and feed PCM frames into a thread-safe queue for the ASR consumer.",
+  "depends_on": [
+    "TASK-1102"
+  ],
+  "files_touched_estimate": [
+    "projects/translator-app/src/translator_app/audio/capture.py",
+    "projects/translator-app/tests/test_capture.py"
+  ],
+  "acceptance_criteria": [
+    "Captures loopback audio from the selected device into a frame queue",
+    "Capture runs on its own thread and can be started/stopped cleanly",
+    "Frame format (rate/channels/dtype) is documented and tested"
+  ]
+}

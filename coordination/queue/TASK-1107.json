@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-1107",
+  "title": "Subtitle renderer",
+  "description": "Render translated text as subtitles on the overlay with appearance controls (font size, screen position, background opacity) and timing logic that clears stale lines.",
+  "depends_on": [
+    "TASK-1106",
+    "TASK-1105"
+  ],
+  "files_touched_estimate": [
+    "projects/translator-app/src/translator_app/ui/subtitle_renderer.py",
+    "projects/translator-app/tests/test_subtitle_renderer.py"
+  ],
+  "acceptance_criteria": [
+    "Displays translated lines with configurable font size, position, and opacity",
+    "Stale lines clear on a defined timing rule",
+    "Timing/clearing logic is unit-tested"
+  ]
+}

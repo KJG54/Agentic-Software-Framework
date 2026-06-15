@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-1105",
+  "title": "Japanese-to-English translation",
+  "description": "Translate ASR output to English using Whisper's translate task, behind a pluggable language-pair interface so additional pairs can be added later.",
+  "depends_on": [
+    "TASK-1104"
+  ],
+  "files_touched_estimate": [
+    "projects/translator-app/src/translator_app/translate/interface.py",
+    "projects/translator-app/src/translator_app/translate/whisper_ja_en.py",
+    "projects/translator-app/tests/test_translate.py"
+  ],
+  "acceptance_criteria": [
+    "Produces English text from Japanese audio via the translate task",
+    "Language-pair selection goes through a documented interface",
+    "Interface and JA->EN implementation are unit-tested"
+  ]
+}

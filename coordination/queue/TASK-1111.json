@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-1111",
+  "title": "Package as Windows executable",
+  "description": "Package the app as a Windows .exe (PyInstaller), handle model/runtime bundling, and document setup and run steps.",
+  "depends_on": [
+    "TASK-1105",
+    "TASK-1107",
+    "TASK-1109",
+    "TASK-1110"
+  ],
+  "files_touched_estimate": [
+    "projects/translator-app/packaging/translator-app.spec",
+    "projects/translator-app/README.md",
+    "projects/translator-app/tests/test_packaging_config.py"
+  ],
+  "acceptance_criteria": [
+    "Produces a launchable Windows .exe",
+    "Model/runtime bundling strategy is documented",
+    "README covers setup and run steps"
+  ]
+}

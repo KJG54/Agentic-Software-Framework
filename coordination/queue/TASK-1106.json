@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-1106",
+  "title": "Full-screen transparent overlay window",
+  "description": "Create a full-screen, fully transparent, click-through, always-on-top overlay window (PySide6) that other widgets render onto without intercepting input to the app underneath.",
+  "depends_on": [
+    "TASK-1101"
+  ],
+  "files_touched_estimate": [
+    "projects/translator-app/src/translator_app/ui/overlay_window.py",
+    "projects/translator-app/tests/test_overlay_window.py"
+  ],
+  "acceptance_criteria": [
+    "Window is full-screen, transparent, always-on-top, and click-through",
+    "Mouse and keyboard pass through to the application beneath",
+    "Window construction is tested headlessly where feasible"
+  ]
+}

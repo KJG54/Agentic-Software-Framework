@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-1102",
+  "title": "Audio device enumeration and launch-time picker",
+  "description": "Enumerate available WASAPI loopback-capable output devices and present a picker at launch so the user selects which device to listen from before capture starts.",
+  "depends_on": [
+    "TASK-1101"
+  ],
+  "files_touched_estimate": [
+    "projects/translator-app/src/translator_app/audio/devices.py",
+    "projects/translator-app/src/translator_app/ui/device_picker.py",
+    "projects/translator-app/tests/test_devices.py"
+  ],
+  "acceptance_criteria": [
+    "Lists loopback-capable devices with stable identifiers",
+    "Picker returns the chosen device to the caller",
+    "Device enumeration is unit-tested with the audio backend mocked"
+  ]
+}

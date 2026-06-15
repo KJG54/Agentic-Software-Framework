@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-1109",
+  "title": "Exit controls and clean shutdown",
+  "description": "Provide exit from the settings bar and a top-right exit button, and ensure stopping cleanly tears down audio capture and ASR threads.",
+  "depends_on": [
+    "TASK-1108",
+    "TASK-1103"
+  ],
+  "files_touched_estimate": [
+    "projects/translator-app/src/translator_app/ui/exit_controls.py",
+    "projects/translator-app/src/translator_app/app.py",
+    "projects/translator-app/tests/test_shutdown.py"
+  ],
+  "acceptance_criteria": [
+    "Exit is reachable from the settings bar and a top-right button",
+    "Shutdown stops capture and ASR threads without leaks or hangs",
+    "Shutdown sequence is tested"
+  ]
+}

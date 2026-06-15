@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-1104",
+  "title": "Real-time Japanese ASR pipeline",
+  "description": "Consume audio frames in chunks and run faster-whisper on the GPU to produce Japanese transcripts, emitting partial results quickly and finalized segments as more audio arrives.",
+  "depends_on": [
+    "TASK-1103"
+  ],
+  "files_touched_estimate": [
+    "projects/translator-app/src/translator_app/asr/whisper_pipeline.py",
+    "projects/translator-app/tests/test_asr_pipeline.py"
+  ],
+  "acceptance_criteria": [
+    "Transcribes Japanese audio chunks in near real time on the GPU",
+    "Emits partial then finalized segments",
+    "Chunking/segmentation logic is unit-tested with the model mocked"
+  ]
+}
