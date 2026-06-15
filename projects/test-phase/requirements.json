@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "project": "test-phase",
+  "summary": "Implement the test phase — the loop gate after build. `appbuilder test <slug>` runs the built project's own test suite with `node --test` inside build/<slug>/, gates on a clean green (build-report present, >=1 test ran, zero failures), and writes a validated build/<slug>/test-report.json for the review phase. A single CLI-driven verb with no LLM and no agent-authored manifest — the deterministic complement to build's agent-declared accounting.",
+  "goals": [
+    "Make `appbuilder test <slug>` execute the built project's tests and gate on the result, the first phase where the CLI runs code rather than only validating declarations.",
+    "Define a test-report.json contract (counts + the exact command) that the review phase can consume, written only when the gate passes.",
+    "Preserve the cross-phase invariants: a report's existence means its gate passed, and a test-first build must never green on zero tests.",
+    "Ship a thorough operator walkthrough so a human can run and understand the test phase end to end."
+  ],
+  "features": [
+    {
+      "name": "test-report contract + validator",
+      "description": "Add contracts/schemas/v1/test-report.schema.json (schema_version, project, generated_at, command, tests_total, tests_passed, tests_failed, tests_skipped; counts integers >=0; enum-free). Add validateTestReport to cli/lib/validate.js and register 'test-report' in REQUIRED_SCHEMA_NAMES."
+    },
+    {
+      "name": "test verb (run + gate + report)",
+      "description": "Add cli/lib/test.js: gate that build/<slug>/build-report.json exists, spawn `node --test` over the project's test glob in build/<slug>/, parse the summary for counts, fail (printing output, writing nothing) on missing build-report, zero tests, or any failure, and on success write a validated build/<slug>/test-report.json. Wire `case test` in cli/appbuilder.js (out of the placeholder group) and add help text."
+    },
+    {
+      "name": "operator documentation",
+      "description": "Add a Test section to README.md and a thorough test-phase walkthrough to HOWTO.md (renumbering the later sections), covering the verb, the gate rules, the report, and the failure-mode table."
+    }
+  ],
+  "constraints": [
+    "No LLM in the CLI; running tests is deterministic.",
+    "Zero new dependencies; use node --test and the existing custom validator.",
+    "No report on failure — a test-report.json on disk must mean the gate passed.",
+    "Zero tests fails the gate; never green on nothing.",
+    "Follow the established cli/lib + contracts + tests pattern; test-first.",
+    "All three tasks touch tests/appbuilder.test.js, so they serialize (one merge at a time)."
+  ]
+}
