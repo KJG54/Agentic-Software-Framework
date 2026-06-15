@@ -28,6 +28,7 @@ const {
   validateScaffoldReport,
   validateBuildManifest,
   validateBuildReport,
+  validateTestReport,
   parseFrontmatter
 } = require("./lib/validate");
 const {
@@ -48,7 +49,7 @@ const { scaffold } = require("./lib/scaffold");
 const { templates } = require("./lib/templates");
 const { build } = require("./lib/build");
 
-const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report", "build-manifest", "build-report"];
+const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report", "build-manifest", "build-report", "test-report"];
 
 function main(argv = process.argv.slice(2), cwd = process.cwd()) {
   const command = argv[0] || "help";
@@ -307,6 +308,7 @@ module.exports = {
   validateScaffoldReport,
   validateBuildManifest,
   validateBuildReport,
+  validateTestReport,
   parseFrontmatter,
   buildHandoffMarkdown,
   pathsOverlap,

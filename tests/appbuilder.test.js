@@ -126,6 +126,55 @@ test("build-report validation requires the core report fields", () => {
   assert.equal(extra.ok, false);
 });
 
+test("test-report validation requires the core report fields", () => {
+  const good = cli.validateTestReport({
+    schema_version: "1.0",
+    project: "demo",
+    generated_at: new Date().toISOString(),
+    command: "node --test test/**/*.test.js",
+    tests_total: 5,
+    tests_passed: 5,
+    tests_failed: 0,
+    tests_skipped: 0
+  }, repoRoot);
+  assert.equal(good.ok, true, (good.errors || []).join("; "));
+
+  // missing counts / command fail.
+  const bad = cli.validateTestReport({
+    schema_version: "1.0",
+    project: "demo",
+    generated_at: new Date().toISOString()
+  }, repoRoot);
+  assert.equal(bad.ok, false);
+
+  // counts cannot be negative.
+  const negative = cli.validateTestReport({
+    schema_version: "1.0",
+    project: "demo",
+    generated_at: new Date().toISOString(),
+    command: "node --test",
+    tests_total: -1,
+    tests_passed: 0,
+    tests_failed: 0,
+    tests_skipped: 0
+  }, repoRoot);
+  assert.equal(negative.ok, false);
+
+  // unexpected properties are rejected (additionalProperties: false).
+  const extraField = cli.validateTestReport({
+    schema_version: "1.0",
+    project: "demo",
+    generated_at: new Date().toISOString(),
+    command: "node --test",
+    tests_total: 0,
+    tests_passed: 0,
+    tests_failed: 0,
+    tests_skipped: 0,
+    surprise: true
+  }, repoRoot);
+  assert.equal(extraField.ok, false);
+});
+
 test("cli template manifest is valid and its required_files exist", () => {
   const templateDir = path.join(repoRoot, "templates", "cli");
   const manifest = JSON.parse(fs.readFileSync(path.join(templateDir, "template.json"), "utf8"));

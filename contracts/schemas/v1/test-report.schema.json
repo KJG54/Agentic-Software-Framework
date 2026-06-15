@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://app-builder.local/contracts/schemas/v1/test-report.schema.json",
+  "title": "Test Report",
+  "type": "object",
+  "required": ["schema_version", "project", "generated_at", "command", "tests_total", "tests_passed", "tests_failed", "tests_skipped"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "project": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "command": { "type": "string", "minLength": 1 },
+    "tests_total": { "type": "integer", "minimum": 0 },
+    "tests_passed": { "type": "integer", "minimum": 0 },
+    "tests_failed": { "type": "integer", "minimum": 0 },
+    "tests_skipped": { "type": "integer", "minimum": 0 }
+  },
+  "additionalProperties": false
+}
