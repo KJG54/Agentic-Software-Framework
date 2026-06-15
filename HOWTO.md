@@ -206,9 +206,58 @@ behind. Common failures and their fixes:
 | `scaffold file no longer exists: X` | Restore the scaffolded file the build deleted. |
 
 Re-run `appbuilder build <slug>` until it passes. The resulting `build-report.json` is what the
-`test` phase (a later slice) will build on.
+`test` phase consumes next.
 
-## 5. How work gets done
+## 5. Test the build (`build/<slug>` → `test-report.json`)
+
+`test` is the gate after `build`, and the first phase where the CLI actually **runs** code rather
+than only validating what the agent declared. Like every phase it has **no LLM** — running tests
+is deterministic. It is a single verb:
+
+```bash
+appbuilder test my-app
+```
+
+What it does:
+
+- **Gates on the build first.** `build/my-app/build-report.json` must exist — you cannot test
+  what was not built. If it is missing you get `fail test: ... run appbuilder build my-app first`.
+- **Runs the built project's own suite.** It executes `node --test` (with the TAP reporter, so
+  the results are machine-readable) inside `build/my-app/`, discovering the test files the
+  template and the build phase produced under `test/`.
+- **Parses and gates.** It reads the run's summary and passes **only when** a build report
+  exists, **at least one test ran**, and **zero tests failed**.
+
+On success it writes `build/my-app/test-report.json` — the exact command plus the counts — for
+the review phase to consume:
+
+```json
+{
+  "schema_version": "1.0",
+  "project": "my-app",
+  "generated_at": "2026-06-14T00:00:00.000Z",
+  "command": "node --test --test-reporter=tap",
+  "tests_total": 5,
+  "tests_passed": 5,
+  "tests_failed": 0,
+  "tests_skipped": 0
+}
+```
+
+On **any** failure it prints the `node --test` output, adds a `fail test: …` line, exits
+non-zero, and **writes nothing** — so, exactly like `scaffold` and `build`, a `test-report.json`
+on disk always means the gate passed. Common failures and their fixes:
+
+| `fail test: …` says | Fix |
+| --- | --- |
+| `no build report for <slug> …` | Run `appbuilder build <slug>` until it passes first. |
+| `no tests found` | The build produced no runnable tests — add tests (the framework is test-first). |
+| `N test(s) failed` | Read the printed output, fix the code or the test, and re-run. |
+
+Re-run `appbuilder test <slug>` until it passes. The resulting `test-report.json` is what the
+`review` phase (a later slice) will build on.
+
+## 6. How work gets done
 
 Once tasks are in the queue, an agent (or you) runs the coordination loop per task:
 
@@ -248,5 +297,5 @@ Codex agents don't get the shortcuts but auto-load the same workflow from [AGENT
 
 ## Later phases
 
-`start`, `test`, `review`, and `ship` are placeholders today. They will fill in the rest of the
+`start`, `review`, and `ship` are placeholders today. They will fill in the rest of the
 loop (`plan → scaffold → build → test → review → ship`) in future slices.
