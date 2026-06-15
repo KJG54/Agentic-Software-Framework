@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "project": "ship-phase",
+  "summary": "Implement the ship phase — the final step of the loop, after review. `appbuilder ship <slug>` is a deterministic generator (like build/test, no LLM): it verifies the entire upstream chain (scaffold-report.json, build-report.json, test-report.json all present + valid, and review-report.md with decision == approved) and, only on success, writes build/<slug>/ship-checklist.md — a markdown artifact with flat frontmatter that rolls up the run plus a static manual go-live checklist. The artifact name and frontmatter format are already reserved by project-workflow.md and scanForArtifactVersions. ship records readiness; it does not deploy. This slice also removes the now-empty 'Later-phase workflow placeholders' group, leaving the loop placeholder-free.",
+  "goals": [
+    "Add `appbuilder ship <slug>` as a single-verb generator that gates on the full upstream chain and writes a schema-valid build/<slug>/ship-checklist.md only when every prior phase passed.",
+    "Define a ship-checklist.md frontmatter contract (markdown artifact) consistent with the flat-frontmatter parser and the review-report/handoff precedent.",
+    "Make the gate require ALL prior reports (scaffold/build/test) present + review-report.md decision == approved, failing loudly (fail ship: lines, exit 1, no write) if any is missing.",
+    "Generate a roll-up checklist: phase summary, test counts, built artifacts, and a static manual go-live steps section; refuse to overwrite an existing checklist without --force so human go-live ticks are preserved.",
+    "Replace the dead `case \"ship\"` placeholder with the real command and remove the now-empty placeholder group from the router/help/docs.",
+    "Ship a thorough operator walkthrough so a human can run and understand the ship phase end to end."
+  ],
+  "features": [
+    {
+      "name": "ship-checklist contract + validator",
+      "description": "Add contracts/schemas/v1/ship-checklist.schema.json (flat frontmatter: schema_version const 1.0, project, shipped_at date-time, review_decision const approved, reviewed_at date-time; additionalProperties true, like review-report/handoff). Add validateShipChecklist to cli/lib/validate.js using validateMarkdownArtifact, export it, re-export from cli/appbuilder.js, and register 'ship-checklist' in REQUIRED_SCHEMA_NAMES."
+    },
+    {
+      "name": "ship verb (full-chain generator)",
+      "description": "Add cli/lib/ship.js: `ship <slug>` collects failures and gates on scaffold-report.json + build-report.json + test-report.json all present/parsing AND review-report.md present with valid frontmatter and decision == approved. On failure prints `fail ship:` lines, exits 1, writes nothing. On success it reads the reports for facts and writes build/<slug>/ship-checklist.md (flat frontmatter incl. review_decision/reviewed_at carried through; ## Phase Summary with test counts; ## Artifacts; ## Manual Go-Live Steps as static checkboxes). The generated frontmatter is validated before writing; ship refuses to overwrite an existing checklist without --force. Wire `case \"ship\"` (replacing the placeholder) in cli/appbuilder.js and add help text."
+    },
+    {
+      "name": "remove the placeholder group",
+      "description": "Replace the placeholder `case \"ship\"` body with `return ship(cwd, args)` and remove the now-empty 'Later-phase workflow placeholders' help group (ship was its only member). Update README/HOWTO wording so the loop is described as placeholder-free."
+    },
+    {
+      "name": "operator documentation",
+      "description": "Add a Ship section to README.md and a thorough ship-phase walkthrough to HOWTO.md (the single verb, the full-chain gate, the generated checklist content, --force, a failure-mode -> fix table), renumbering the subsequent sections."
+    }
+  ],
+  "constraints": [
+    "No LLM in the CLI; ship is a deterministic full-chain gate + roll-up generator.",
+    "Zero new dependencies; reuse the existing custom validator, parseFrontmatter, markdown-artifact validation, and util helpers.",
+    "ship-checklist.md frontmatter must stay flat (the frontmatter parser does not support nested objects).",
+    "Existence == passed: ship writes the checklist only when the full chain passes; on any failure it writes nothing.",
+    "Refuse to overwrite an existing ship-checklist.md without --force so human go-live ticks are not wiped.",
+    "Do not change other phases; only add ship and remove the empty placeholder group.",
+    "Follow the established cli/lib + contracts + tests pattern; test-first.",
+    "All three tasks touch tests/appbuilder.test.js, so they serialize (one merge at a time)."
+  ]
+}
