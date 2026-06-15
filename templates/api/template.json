@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "id": "api",
+  "name": "Node JSON API",
+  "description": "A minimal, zero-dependency JSON REST API: a pure, tested route dispatcher served over node:http.",
+  "tags": ["api", "http", "json", "node"],
+  "required_files": ["package.json", "README.md", ".gitignore", "src/router.js", "src/server.js", "test/router.test.js"]
+}

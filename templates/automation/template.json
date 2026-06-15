@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "id": "automation",
+  "name": "Node Automation Script",
+  "description": "A minimal, zero-dependency batch/automation script: a pure processing pipeline with a thin runner, made for cron or CI.",
+  "tags": ["automation", "script", "batch", "node"],
+  "required_files": ["package.json", "README.md", ".gitignore", "src/pipeline.js", "src/index.js", "test/pipeline.test.js"]
+}

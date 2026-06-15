@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "id": "frontend",
+  "name": "Vite + React App",
+  "description": "A modern Vite + React single-page app skeleton. UI logic lives in pure modules covered by node:test, so the framework's test gate passes without an npm install.",
+  "tags": ["frontend", "web", "react", "vite"],
+  "required_files": ["package.json", "README.md", ".gitignore", "index.html", "vite.config.js", "src/main.jsx", "src/App.jsx", "src/lib/format.js", "test/format.test.js"]
+}
