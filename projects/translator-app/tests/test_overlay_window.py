@@ -123,6 +123,36 @@ class BuildOverlayTest(unittest.TestCase):
         self.assertIsNone(widget.geometry)
 
 
+class ControlsWindowTest(unittest.TestCase):
+    """The controls window must stay interactive, unlike the subtitle canvas.
+
+    Regression guard for the packaged-app bug where the exit button and settings
+    bar were children of the click-through overlay, so every click fell through
+    them to the desktop. The controls live in their own non-click-through window.
+    """
+
+    def test_controls_window_is_not_click_through(self):
+        from translator_app.ui.overlay_window import build_controls_window
+
+        widget = build_controls_window(qt_modules=FakeQtModules())
+
+        # No transparent-for-input flag (0x8) and no mouse-transparent attribute:
+        self.assertFalse(widget.flags & _FakeQt.WindowTransparentForInput)
+        applied = [name for name, on in widget.attributes]
+        self.assertNotIn("WA_TransparentForMouseEvents", applied)
+
+    def test_controls_window_stays_frameless_on_top_tool_translucent(self):
+        from translator_app.ui.overlay_window import build_controls_window
+
+        widget = build_controls_window(qt_modules=FakeQtModules())
+
+        # Frameless(0x1) | OnTop(0x2) | Tool(0x4) == 0x7, no transparent-for-input.
+        self.assertEqual(widget.flags, 0x7)
+        applied = [name for name, on in widget.attributes]
+        self.assertIn("WA_TranslucentBackground", applied)
+        self.assertIn("WA_ShowWithoutActivating", applied)
+
+
 class NativeClickThroughTest(unittest.TestCase):
     def test_is_safe_when_winid_unavailable(self):
         from translator_app.ui.overlay_window import enable_windows_click_through

@@ -39,8 +39,12 @@ def run() -> int:
         PipelineReconfigurator,
     )
     from .ui.exit_controls import ExitButton, bind_exit_routes
-    from .ui.overlay_window import build_overlay, enable_windows_click_through
-    from .ui.settings_bar import SettingsBarWidget
+    from .ui.overlay_window import (
+        build_controls_window,
+        build_overlay,
+        enable_windows_click_through,
+    )
+    from .ui.settings_bar import RevealPolicy, SettingsBarWidget
     from .ui.subtitle_renderer import SubtitleRenderer
 
     qt_app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
@@ -78,10 +82,16 @@ def run() -> int:
     )
 
     # --- overlay + UI ------------------------------------------------------
+    # Two windows on purpose: the subtitle canvas is fully click-through so it
+    # never steals clicks from the show underneath, while the controls live in a
+    # separate *interactive* window -- otherwise the exit button and settings bar
+    # would be painted but un-clickable (every press falls through the overlay).
     overlay = build_overlay()
     renderer = SubtitleRenderer(parent=overlay)
     renderer.widget.setParent(overlay)
-    settings_bar = SettingsBarWidget(controller=controller, parent=overlay)
+
+    controls = build_controls_window()
+    settings_bar = SettingsBarWidget(controller=controller, parent=controls)
 
     # ASR worker (off-thread) -> queue -> GUI-thread QTimer -> renderer
     segments: "queue.Queue[object]" = queue.Queue()
@@ -116,17 +126,43 @@ def run() -> int:
         app.shutdown()
         qt_app.quit()
 
-    exit_button = ExitButton(on_exit=on_exit, parent=overlay)
+    exit_button = ExitButton(on_exit=on_exit, parent=controls)
     bind_exit_routes(controller, on_exit, exit_button=exit_button)
 
     # --- show + start ------------------------------------------------------
     overlay.showFullScreen()
     enable_windows_click_through(overlay)  # best-effort; needs a realized handle
-    geometry = overlay.geometry()
-    exit_button.position_top_right(geometry.width())
+
+    # Controls window: a thin, full-width interactive strip pinned to the top.
+    # NOT click-through (no enable_windows_click_through call) so it gets clicks.
+    reveal = RevealPolicy()
+    screen_geometry = overlay.geometry()
+    screen_width = screen_geometry.width()
+    controls.setGeometry(0, 0, screen_width, reveal.bar_height_px)
+    controls.setMouseTracking(True)
+
+    # Hover-reveal: the settings bar hides until the pointer reaches the top edge,
+    # then stays while the pointer is over the bar (RevealPolicy hysteresis).
+    class _RevealFilter(QtCore.QObject):
+        def eventFilter(self, _obj, event):
+            if event.type() == QtCore.QEvent.Type.MouseMove:
+                mouse_y = event.position().y()
+                if reveal.should_be_visible(mouse_y, currently_visible=settings_bar.is_revealed):
+                    settings_bar.reveal()
+                else:
+                    settings_bar.conceal()
+            return False
+
+    reveal_filter = _RevealFilter()
+    controls.installEventFilter(reveal_filter)
+    # Keep a reference so the filter isn't garbage-collected while the app runs.
+    controls._reveal_filter = reveal_filter  # type: ignore[attr-defined]
+
+    controls.show()
+    controls.raise_()
+    exit_button.position_top_right(screen_width)
     exit_button.widget.show()
-    settings_bar.widget.show()  # the bar manages its own reveal/conceal thereafter
-    settings_bar.conceal()
+    settings_bar.conceal()  # starts hidden; the reveal filter shows it on hover
 
     app.start()
     timer.start()
