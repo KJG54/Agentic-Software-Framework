@@ -210,6 +210,44 @@ test("review-report validation requires valid frontmatter and a known decision",
   assert.equal(missing.ok, false);
 });
 
+test("ship-checklist validation requires valid frontmatter and an approved decision", () => {
+  const good = cli.validateShipChecklist({
+    schema_version: "1.0",
+    project: "demo",
+    shipped_at: new Date().toISOString(),
+    review_decision: "approved",
+    reviewed_at: new Date().toISOString()
+  }, repoRoot);
+  assert.equal(good.ok, true, (good.errors || []).join("; "));
+
+  // review_decision is pinned to approved: nothing else may ship.
+  const notApproved = cli.validateShipChecklist({
+    schema_version: "1.0",
+    project: "demo",
+    shipped_at: new Date().toISOString(),
+    review_decision: "changes_requested",
+    reviewed_at: new Date().toISOString()
+  }, repoRoot);
+  assert.equal(notApproved.ok, false);
+
+  // shipped_at / reviewed_at must be real date-times.
+  const badDate = cli.validateShipChecklist({
+    schema_version: "1.0",
+    project: "demo",
+    shipped_at: "not-a-date",
+    review_decision: "approved",
+    reviewed_at: new Date().toISOString()
+  }, repoRoot);
+  assert.equal(badDate.ok, false);
+
+  // required fields must be present.
+  const missing = cli.validateShipChecklist({
+    schema_version: "1.0",
+    project: "demo"
+  }, repoRoot);
+  assert.equal(missing.ok, false);
+});
+
 test("cli template manifest is valid and its required_files exist", () => {
   const templateDir = path.join(repoRoot, "templates", "cli");
   const manifest = JSON.parse(fs.readFileSync(path.join(templateDir, "template.json"), "utf8"));
