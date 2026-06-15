@@ -112,10 +112,38 @@ Do **not** write to disk until the operator confirms. Two gates:
    - `goals[]` — the core outcome plus the other must-be-trues. Non-empty.
    - `features[]` — each `{ "name", "description" }`, drawn from the deep-dive answers.
      Non-empty; every `name` non-empty.
-   - `constraints[]` — platform, runtime, scope-outs, non-goals.
+   - `constraints[]` — platform, runtime, hard limits.
+   - **Discrete optional fields — populate each only when the answers cover it** (leave it out
+     otherwise; all are optional and backward-compatible):
+     - `out_of_scope[]` — explicit non-goals / things deliberately not built.
+     - `security[]` — security or privacy requirements (auth, data handling, secrets).
+     - `performance[]` — latency, throughput, or resource targets.
+     - `timeline` — any deadline or milestone the operator stated.
+     - `success_criteria[]` — how "done"/"working" is judged (the acceptance bar).
 2. **Show it back in plain language** and ask the operator to confirm or correct.
 3. On confirmation: run `appbuilder plan new <slug>` (if not already done) and write
    `requirements.json`.
+
+### Gate 1.5 — stack decision (Checkpoint 3)
+
+Before the task plan, settle the stack explicitly so the choice is reviewable rather than buried
+in `architecture.md` prose. Ask, one at a time:
+
+1. **Given the build type and constraints, what stack do you recommend?** → `recommended_stack`
+   (e.g. "Node.js + node:test", "Python + FastAPI", "Vite + React").
+2. **Why that stack?** → `rationale`.
+3. **What are the tradeoffs of this choice?** → `tradeoffs[]`.
+4. **What alternatives did you weigh and set aside?** → `alternatives_considered[]`.
+5. **Is this a call the human must make before you proceed?** → `human_decision_needed` (boolean).
+
+Then:
+
+1. Synthesize a proposed `stack-decision.json` (`recommended_stack`, `rationale`, `tradeoffs[]`,
+   `alternatives_considered[]`, `human_decision_needed`).
+2. **Show it back in plain language** and confirm or correct. If `human_decision_needed` is true,
+   call that out explicitly and get the human's pick before continuing.
+3. On confirmation: write `stack-decision.json` (its `recommended_stack` must be non-empty —
+   `plan compile` gates on it).
 
 ### Gate 2 — task plan
 

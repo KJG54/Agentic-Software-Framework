@@ -32,6 +32,7 @@ const {
   validateReviewReport,
   validateShipChecklist,
   validateAdr,
+  validateInternalToolRegistry,
   parseFrontmatter
 } = require("./lib/validate");
 const {
@@ -56,7 +57,7 @@ const { review } = require("./lib/review");
 const { ship } = require("./lib/ship");
 const { decision } = require("./lib/decision");
 
-const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report", "build-manifest", "build-report", "test-report", "review-report", "ship-checklist", "adr"];
+const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "stack-decision", "scaffold-report", "build-manifest", "build-report", "test-report", "review-report", "ship-checklist", "adr", "internal-tool-registry"];
 
 function main(argv = process.argv.slice(2), cwd = process.cwd()) {
   const command = argv[0] || "help";
@@ -128,8 +129,8 @@ Core coordination commands:
   events                   Derive coordination events from Git history
 
 Planning commands:
-  plan new <slug>          Scaffold a project plan (requirements, architecture, task-plan)
-  plan compile <slug>      Validate requirements and the task plan
+  plan new <slug>          Scaffold a project plan (requirements, architecture, task-plan, stack-decision)
+  plan compile <slug>      Validate requirements, the task plan, and the stack decision
   plan seed <slug>         Publish the plan's tasks to the coordination queue
   scaffold <slug>          Render the build-type skeleton into build/<slug> (--force to overwrite)
   templates                List available build-type templates (--json for a machine-readable list)
@@ -195,6 +196,22 @@ function doctor(cwd) {
 
   for (const schema of REQUIRED_SCHEMA_NAMES) {
     check(`schema:${schema}`, fs.existsSync(path.join(root, "contracts", "schemas", "v1", `${schema}.schema.json`)), "exists");
+  }
+
+  // Tool-discovery protocol: the internal tool registry must exist and stay schema-valid, so the
+  // "check existing tools before building new" rule (.agent/rules/tool-discovery.md) has a live
+  // catalog to point at rather than an empty folder.
+  const registryPath = path.join(root, "tools", "internal-tool-registry.json");
+  if (!fs.existsSync(registryPath)) {
+    check("tools:registry", false, "tools/internal-tool-registry.json missing");
+  } else {
+    try {
+      const registry = readJson(registryPath);
+      const result = validateInternalToolRegistry(registry, root);
+      check("tools:registry", result.ok, result.ok ? `${(registry.tools || []).length} tools` : result.errors.join("; "));
+    } catch (error) {
+      check("tools:registry", false, error.message);
+    }
   }
 
   // Agent onboarding: the framework is only drivable if an agent dropped into the repo
@@ -331,6 +348,7 @@ module.exports = {
   validateReviewReport,
   validateShipChecklist,
   validateAdr,
+  validateInternalToolRegistry,
   parseFrontmatter,
   buildHandoffMarkdown,
   pathsOverlap,

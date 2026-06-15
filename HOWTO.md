@@ -46,11 +46,13 @@ appbuilder status              # show active claims, expired claims, orphaned br
 appbuilder plan new my-app
 ```
 
-Scaffolds `projects/my-app/` with three stubs:
+Scaffolds `projects/my-app/` with four stubs:
 
 - `requirements.json` — goals, features, constraints (starts empty).
 - `architecture.md` — a notes stub.
 - `task-plan.json` — the list of tasks to queue (starts empty).
+- `stack-decision.json` — the recommended stack, its rationale, tradeoffs, alternatives, and
+  whether the human must decide (starts empty; `compile` requires a non-empty `recommended_stack`).
 
 Now **fill them in.** If you drive this through an agent (`/plan` in Claude Code, or the same
 `/plan` flow Codex loads from [AGENTS.md](AGENTS.md)), it won't just ask you to type JSON — it
@@ -63,11 +65,13 @@ runs a **build-type interview** first, scripted in
 - **Phase B — build-type deep-dive.** Only the track matching your Phase A answer runs (~4–6
   more questions), drilling into the specifics that build-type needs.
 
-The agent then **synthesizes** the answers into the artifacts and shows them back at two
+The agent then **synthesizes** the answers into the artifacts and shows them back at
 **confirm-back gates** — first the proposed `requirements.json` (`summary`, `goals`,
-`features`, `constraints`), then the first-draft `task-plan.json` (the `TASK-NNN` tasks, each
-with `title`, `files_touched_estimate`, and optional `depends_on`). Nothing is written to disk
-until you confirm each gate. Driving it yourself by hand works too — fill the same fields in
+`features`, `constraints`), then the `stack-decision.json` (the recommended stack with its
+tradeoffs and alternatives — flagged for a human call when `human_decision_needed` is true),
+then the first-draft `task-plan.json` (the `TASK-NNN` tasks, each with `title`,
+`files_touched_estimate`, and optional `depends_on`). Nothing is written to disk until you
+confirm each gate. Driving it yourself by hand works too — fill the same fields in
 directly — but the interview is what makes the requirements step thorough rather than a blank
 form.
 
@@ -75,9 +79,10 @@ form.
 appbuilder plan compile my-app
 ```
 
-Validates structure **and** readiness: `summary`/`goals`/`features` must be non-empty, every
-task must be valid, ids unique, and every `depends_on` must resolve within the plan. It writes
-nothing — fix any `fail` lines and re-run until it prints `ok compile: ... passed`.
+Validates structure **and** readiness: `summary`/`goals`/`features` must be non-empty, the
+stack decision must have a non-empty `recommended_stack`, every task must be valid, ids unique,
+and every `depends_on` must resolve within the plan. It writes nothing — fix any `fail` lines
+and re-run until it prints `ok compile: ... passed`.
 
 **Review the plan.** Once you're happy with it:
 

@@ -653,6 +653,7 @@ test("plan compile gates on filled requirements and a consistent task plan", { t
       { schema_version: "1.0", id: "TASK-001", title: "Build core", files_touched_estimate: ["cli/"], depends_on: [] }
     ]
   }, null, 2));
+  writeStackDecision(projectDir);
   const ok = run(process.execPath, [cliPath, "plan", "compile", "demo-app"], fixture);
   assert.match(ok.stdout, /passed/);
 
@@ -690,6 +691,7 @@ test("compile validates build_type format and is dir-driven, not enum-bound", { 
       { schema_version: "1.0", id: "TASK-001", title: "Build core", files_touched_estimate: ["cli/"], depends_on: [] }
     ]
   }, null, 2));
+  writeStackDecision(projectDir);
 
   // A malformed build_type (not a slug) is rejected at compile.
   fs.writeFileSync(requirementsPath, requirementsWith({ build_type: "Not A Slug" }));
@@ -711,6 +713,76 @@ test("compile validates build_type format and is dir-driven, not enum-bound", { 
   fs.writeFileSync(requirementsPath, requirementsWith({}));
   const omitted = run(process.execPath, [cliPath, "plan", "compile", "demo-app"], fixture);
   assert.match(omitted.stdout, /passed/);
+});
+
+test("plan new scaffolds a stack-decision stub", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  const stackPath = path.join(fixture, "projects", "demo-app", "stack-decision.json");
+  assert.ok(fs.existsSync(stackPath), "stack-decision.json scaffolded");
+  const stub = JSON.parse(fs.readFileSync(stackPath, "utf8"));
+  assert.equal(stub.project, "demo-app");
+  assert.equal(stub.recommended_stack, "");
+  assert.equal(stub.human_decision_needed, false);
+});
+
+test("plan compile gates on the stack decision (Checkpoint 3)", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+  const projectDir = path.join(fixture, "projects", "demo-app");
+  // Fill requirements + task-plan so only the stack decision can fail.
+  writeFilledPlan(projectDir);
+
+  // The scaffolded stub has an empty recommended_stack -> compile fails on it.
+  fs.writeFileSync(path.join(projectDir, "stack-decision.json"), JSON.stringify({
+    schema_version: "1.0", project: "demo-app", recommended_stack: "",
+    rationale: "", tradeoffs: [], alternatives_considered: [], human_decision_needed: false
+  }, null, 2));
+  const emptyStack = runFail(process.execPath, [cliPath, "plan", "compile", "demo-app"], fixture);
+  assert.match(emptyStack.stdout + emptyStack.stderr, /stack-decision.*recommended_stack/);
+
+  // A missing stack-decision.json also fails.
+  fs.rmSync(path.join(projectDir, "stack-decision.json"));
+  const missing = runFail(process.execPath, [cliPath, "plan", "compile", "demo-app"], fixture);
+  assert.match(missing.stdout + missing.stderr, /stack-decision.*not found/);
+
+  // A filled stack-decision compiles.
+  writeStackDecision(projectDir);
+  const ok = run(process.execPath, [cliPath, "plan", "compile", "demo-app"], fixture);
+  assert.match(ok.stdout, /passed/);
+});
+
+// --- enriched requirements schema (TASK 6) ---------------------------------
+
+test("requirements schema accepts the new optional fields and stays backward-compatible", () => {
+  const base = {
+    schema_version: "1.0",
+    project: "demo-app",
+    summary: "A small demo app.",
+    goals: ["Ship a slice"],
+    features: [{ name: "core" }],
+    constraints: []
+  };
+  // Backward-compatible: a doc without the new fields still validates.
+  assert.equal(schemaValidator.validateJsonArtifact(repoRoot, "requirements", base).ok, true);
+
+  // The new discrete fields are accepted.
+  const enriched = {
+    ...base,
+    out_of_scope: ["No mobile app"],
+    security: ["No secrets in logs"],
+    performance: ["First caption < 2s"],
+    timeline: "2 weeks",
+    success_criteria: ["Captions render on real audio"]
+  };
+  const enrichedResult = schemaValidator.validateJsonArtifact(repoRoot, "requirements", enriched);
+  assert.equal(enrichedResult.ok, true, (enrichedResult.errors || []).join("; "));
+
+  // Wrong types for the new fields are rejected.
+  const badTimeline = schemaValidator.validateJsonArtifact(repoRoot, "requirements", { ...base, timeline: 14 });
+  assert.equal(badTimeline.ok, false);
+  const badScope = schemaValidator.validateJsonArtifact(repoRoot, "requirements", { ...base, out_of_scope: "nope" });
+  assert.equal(badScope.ok, false);
 });
 
 test("scaffold renders the cli template into build/<slug> with a valid report", { timeout: 30000 }, () => {
@@ -966,6 +1038,7 @@ test("build validates a filled-in manifest and writes a build-report", { timeout
       { schema_version: "1.0", id: "TASK-002", title: "Extra", files_touched_estimate: ["src/"], depends_on: [] }
     ]
   }, null, 2));
+  writeStackDecision(projectDir);
   run(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
   run(process.execPath, [cliPath, "build", "init", "demo-app"], fixture);
 
@@ -1317,6 +1390,7 @@ test("plan seed publishes tasks and skips ids already in the queue", { timeout: 
       { schema_version: "1.0", id: "TASK-002", title: "Add docs", files_touched_estimate: ["docs/"], depends_on: [] }
     ]
   }, null, 2));
+  writeStackDecision(projectDir);
 
   // Pre-seed TASK-002 directly so seed must skip it.
   const coord = path.join(fixture, ".appbuilder", "coordination-worktree");
@@ -1593,6 +1667,33 @@ test("doctor checks the adr schema", () => {
   assert.match(out, /ok schema:adr/);
 });
 
+// --- tool-discovery protocol (TASK 5) --------------------------------------
+
+test("the internal tool registry is non-empty and schema-valid", () => {
+  const registry = JSON.parse(fs.readFileSync(path.join(repoRoot, "tools", "internal-tool-registry.json"), "utf8"));
+  assert.ok(Array.isArray(registry.tools) && registry.tools.length > 0, "registry has tools");
+  const result = cli.validateInternalToolRegistry(registry, repoRoot);
+  assert.equal(result.ok, true, (result.errors || []).join("; "));
+});
+
+test("validateInternalToolRegistry rejects an empty or malformed registry", () => {
+  const empty = cli.validateInternalToolRegistry({ schema_version: "1.0", tools: [] }, repoRoot);
+  assert.equal(empty.ok, false);
+  assert(empty.errors.some((e) => e.includes("tools")));
+
+  const badKind = cli.validateInternalToolRegistry({
+    schema_version: "1.0",
+    tools: [{ name: "x", kind: "gadget", purpose: "p", usage: "u" }]
+  }, repoRoot);
+  assert.equal(badKind.ok, false);
+});
+
+test("doctor validates the tool registry", () => {
+  const fixture = makeFixture();
+  const out = spawnSync(process.execPath, [cliPath, "doctor"], { cwd: fixture, encoding: "utf8" }).stdout;
+  assert.match(out, /ok tools:registry/);
+});
+
 function configureGitUser(repo) {
   run("git", ["config", "user.email", "test@example.com"], repo);
   run("git", ["config", "user.name", "Test Agent"], repo);
@@ -1615,6 +1716,20 @@ function writeFilledPlan(projectDir, extra = {}) {
       { schema_version: "1.0", id: "TASK-001", title: "Build core", files_touched_estimate: ["src/"], depends_on: [] }
     ]
   }, null, 2));
+  writeStackDecision(projectDir);
+}
+
+function writeStackDecision(projectDir, extra = {}) {
+  fs.writeFileSync(path.join(projectDir, "stack-decision.json"), JSON.stringify({
+    schema_version: "1.0",
+    project: "demo-app",
+    recommended_stack: "Node.js + node:test",
+    rationale: "Zero-dependency, matches the framework's own stack.",
+    tradeoffs: ["Fewer batteries than a full framework"],
+    alternatives_considered: ["Deno", "Bun"],
+    human_decision_needed: false,
+    ...extra
+  }, null, 2));
 }
 
 function makeFixture() {
@@ -1623,6 +1738,7 @@ function makeFixture() {
   copyDir("contracts", dir);
   copyDir("cli", dir);
   copyDir("templates", dir);
+  copyDir("tools", dir);
   fs.mkdirSync(path.join(dir, "docs"), { recursive: true });
   fs.mkdirSync(path.join(dir, "tests"), { recursive: true });
   fs.mkdirSync(path.join(dir, ".agent", "rules"), { recursive: true });

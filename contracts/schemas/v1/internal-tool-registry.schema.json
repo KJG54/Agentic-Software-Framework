@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://app-builder.local/contracts/schemas/v1/internal-tool-registry.schema.json",
+  "title": "Internal Tool Registry",
+  "type": "object",
+  "required": ["schema_version", "tools"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "kind", "purpose", "usage"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "kind": { "enum": ["cli-command", "template", "library", "script", "service"] },
+          "purpose": { "type": "string", "minLength": 1 },
+          "usage": { "type": "string", "minLength": 1 },
+          "maintenance": { "type": "string" },
+          "reason": { "type": "string" },
+          "alternatives_considered": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}
