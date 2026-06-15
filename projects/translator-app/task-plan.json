@@ -1,0 +1,189 @@
+{
+  "schema_version": "1.0",
+  "project": "translator-app",
+  "tasks": [
+    {
+      "schema_version": "1.0",
+      "id": "TASK-1101",
+      "title": "Project skeleton and dependency setup",
+      "description": "Stand up the Python project: virtualenv, requirements.txt (faster-whisper with CUDA, audio + UI deps), app entry point, and a smoke test that imports the package and asserts the entry point is callable.",
+      "files_touched_estimate": [
+        "projects/translator-app/src/translator_app/__init__.py",
+        "projects/translator-app/src/translator_app/__main__.py",
+        "projects/translator-app/requirements.txt",
+        "projects/translator-app/tests/test_smoke.py"
+      ],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "Fresh environment installs from requirements.txt",
+        "Entry point launches without error",
+        "Smoke test passes"
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-1102",
+      "title": "Audio device enumeration and launch-time picker",
+      "description": "Enumerate available WASAPI loopback-capable output devices and present a picker at launch so the user selects which device to listen from before capture starts.",
+      "files_touched_estimate": [
+        "projects/translator-app/src/translator_app/audio/devices.py",
+        "projects/translator-app/src/translator_app/ui/device_picker.py",
+        "projects/translator-app/tests/test_devices.py"
+      ],
+      "depends_on": ["TASK-1101"],
+      "acceptance_criteria": [
+        "Lists loopback-capable devices with stable identifiers",
+        "Picker returns the chosen device to the caller",
+        "Device enumeration is unit-tested with the audio backend mocked"
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-1103",
+      "title": "WASAPI loopback capture stream",
+      "description": "Capture system audio from the selected device via WASAPI loopback and feed PCM frames into a thread-safe queue for the ASR consumer.",
+      "files_touched_estimate": [
+        "projects/translator-app/src/translator_app/audio/capture.py",
+        "projects/translator-app/tests/test_capture.py"
+      ],
+      "depends_on": ["TASK-1102"],
+      "acceptance_criteria": [
+        "Captures loopback audio from the selected device into a frame queue",
+        "Capture runs on its own thread and can be started/stopped cleanly",
+        "Frame format (rate/channels/dtype) is documented and tested"
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-1104",
+      "title": "Real-time Japanese ASR pipeline",
+      "description": "Consume audio frames in chunks and run faster-whisper on the GPU to produce Japanese transcripts, emitting partial results quickly and finalized segments as more audio arrives.",
+      "files_touched_estimate": [
+        "projects/translator-app/src/translator_app/asr/whisper_pipeline.py",
+        "projects/translator-app/tests/test_asr_pipeline.py"
+      ],
+      "depends_on": ["TASK-1103"],
+      "acceptance_criteria": [
+        "Transcribes Japanese audio chunks in near real time on the GPU",
+        "Emits partial then finalized segments",
+        "Chunking/segmentation logic is unit-tested with the model mocked"
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-1105",
+      "title": "Japanese-to-English translation",
+      "description": "Translate ASR output to English using Whisper's translate task, behind a pluggable language-pair interface so additional pairs can be added later.",
+      "files_touched_estimate": [
+        "projects/translator-app/src/translator_app/translate/interface.py",
+        "projects/translator-app/src/translator_app/translate/whisper_ja_en.py",
+        "projects/translator-app/tests/test_translate.py"
+      ],
+      "depends_on": ["TASK-1104"],
+      "acceptance_criteria": [
+        "Produces English text from Japanese audio via the translate task",
+        "Language-pair selection goes through a documented interface",
+        "Interface and JA->EN implementation are unit-tested"
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-1106",
+      "title": "Full-screen transparent overlay window",
+      "description": "Create a full-screen, fully transparent, click-through, always-on-top overlay window (PySide6) that other widgets render onto without intercepting input to the app underneath.",
+      "files_touched_estimate": [
+        "projects/translator-app/src/translator_app/ui/overlay_window.py",
+        "projects/translator-app/tests/test_overlay_window.py"
+      ],
+      "depends_on": ["TASK-1101"],
+      "acceptance_criteria": [
+        "Window is full-screen, transparent, always-on-top, and click-through",
+        "Mouse and keyboard pass through to the application beneath",
+        "Window construction is tested headlessly where feasible"
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-1107",
+      "title": "Subtitle renderer",
+      "description": "Render translated text as subtitles on the overlay with appearance controls (font size, screen position, background opacity) and timing logic that clears stale lines.",
+      "files_touched_estimate": [
+        "projects/translator-app/src/translator_app/ui/subtitle_renderer.py",
+        "projects/translator-app/tests/test_subtitle_renderer.py"
+      ],
+      "depends_on": ["TASK-1106", "TASK-1105"],
+      "acceptance_criteria": [
+        "Displays translated lines with configurable font size, position, and opacity",
+        "Stale lines clear on a defined timing rule",
+        "Timing/clearing logic is unit-tested"
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-1108",
+      "title": "Auto-hiding settings bar",
+      "description": "Add a top-of-screen settings bar that stays hidden and reveals on hover, exposing language pair, subtitle appearance (font size, position, opacity), latency-vs-accuracy model size, and exit.",
+      "files_touched_estimate": [
+        "projects/translator-app/src/translator_app/ui/settings_bar.py",
+        "projects/translator-app/tests/test_settings_bar.py"
+      ],
+      "depends_on": ["TASK-1106"],
+      "acceptance_criteria": [
+        "Bar is hidden by default and appears on hover at the top region",
+        "Exposes language pair, font size, position, opacity, model size, and exit",
+        "Control state changes emit events the app can subscribe to"
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-1109",
+      "title": "Exit controls and clean shutdown",
+      "description": "Provide exit from the settings bar and a top-right exit button, and ensure stopping cleanly tears down audio capture and ASR threads.",
+      "files_touched_estimate": [
+        "projects/translator-app/src/translator_app/ui/exit_controls.py",
+        "projects/translator-app/src/translator_app/app.py",
+        "projects/translator-app/tests/test_shutdown.py"
+      ],
+      "depends_on": ["TASK-1108", "TASK-1103"],
+      "acceptance_criteria": [
+        "Exit is reachable from the settings bar and a top-right button",
+        "Shutdown stops capture and ASR threads without leaks or hangs",
+        "Shutdown sequence is tested"
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-1110",
+      "title": "Latency-accuracy wiring and ephemeral settings",
+      "description": "Wire the model-size control to the ASR pipeline so the latency-vs-accuracy choice takes effect, and ensure all settings are ephemeral, resetting to defaults on every launch.",
+      "files_touched_estimate": [
+        "projects/translator-app/src/translator_app/settings.py",
+        "projects/translator-app/src/translator_app/app.py",
+        "projects/translator-app/tests/test_settings.py"
+      ],
+      "depends_on": ["TASK-1104", "TASK-1108"],
+      "acceptance_criteria": [
+        "Changing model size re-configures the ASR pipeline",
+        "No settings persist across launches; defaults are restored each time",
+        "Settings defaults and wiring are unit-tested"
+      ]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "TASK-1111",
+      "title": "Package as Windows executable",
+      "description": "Package the app as a Windows .exe (PyInstaller), handle model/runtime bundling, and document setup and run steps.",
+      "files_touched_estimate": [
+        "projects/translator-app/packaging/translator-app.spec",
+        "projects/translator-app/README.md",
+        "projects/translator-app/tests/test_packaging_config.py"
+      ],
+      "depends_on": ["TASK-1105", "TASK-1107", "TASK-1109", "TASK-1110"],
+      "acceptance_criteria": [
+        "Produces a launchable Windows .exe",
+        "Model/runtime bundling strategy is documented",
+        "README covers setup and run steps"
+      ]
+    }
+  ]
+}
