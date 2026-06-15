@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://app-builder.local/contracts/schemas/v1/lesson.schema.json",
+  "title": "Lesson",
+  "type": "object",
+  "required": ["schema_version", "project", "context", "reusable_rule", "date"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "project": { "type": "string", "minLength": 1 },
+    "context": { "type": "string", "minLength": 1 },
+    "what_worked": { "type": "string", "minLength": 1 },
+    "what_failed": { "type": "string", "minLength": 1 },
+    "reusable_rule": { "type": "string", "minLength": 1 },
+    "date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

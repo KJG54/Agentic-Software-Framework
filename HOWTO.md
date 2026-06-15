@@ -451,7 +451,53 @@ Obsidian vault), so they ride the normal task-branch PR to `main` — never the 
 > When a later decision overrides an earlier one, write a new ADR and set the old one's `status`
 > to `superseded` (re-add it with `--status superseded`, or edit the file's frontmatter).
 
-## 9. How work gets done
+## 9. Capture and reuse lessons (the memory layer)
+
+The vault is **memory-assisted, not memory-dependent**: the framework helps you start from prior
+art, but the current project's files are always the source of truth. Two verbs, both no-LLM:
+`lesson add` writes a lesson; `lessons` searches them.
+
+### Capture — after a project ships
+
+```bash
+appbuilder lesson add \
+  --project translator-app \
+  --context "Packaging a PySide6 overlay with PyInstaller." \
+  --rule "Never make interactive controls children of a click-through window." \
+  --worked "Splitting the controls into their own non-click-through window." \
+  --failed "Parenting the exit button to the click-through overlay — clicks fell through." \
+  --tag gui --tag windows
+```
+
+- **Required:** `--project`, `--context`, `--rule`, and **at least one** of `--worked` /
+  `--failed` (a lesson with neither has no content, so it's rejected).
+- **Optional:** `--date` (defaults to today, `YYYY-MM-DD`), `--tag` (repeatable), `--force`.
+- The frontmatter is validated against `contracts/schemas/v1/lesson.schema.json` **before**
+  writing to `vault/framework/lessons/<date>-<project>-<rule-slug>.md`, and the body repeats the
+  content as `## Context` / `## What worked` / `## What failed` / `## Reusable rule` sections.
+  `ship` prints a reminder with a ready-to-edit `lesson add` command.
+
+Lessons live on the working branch (and in the Obsidian vault), so they ride the normal
+task-branch PR to `main` — never the coordination branch.
+
+### Retrieve — before planning the next thing
+
+```bash
+appbuilder lessons "overlay click-through"   # keyword search; --limit N (default 3)
+appbuilder lessons                            # no query: the most recent lessons
+```
+
+It searches `vault/framework/lessons/` and `vault/projects/`, ranks by where the keywords hit
+(filename > frontmatter > body), and prints a compact summary per match (path · date · project ·
+reusable rule) — it never dumps whole files. This is the read-only first step of the plan
+interview (see [.agent/plan-interview.md](.agent/plan-interview.md)).
+
+> **Verify, don't trust.** A retrieved `reusable_rule` is a *hypothesis*, not a fact — check it
+> against the current project before letting it shape a decision (see
+> [.agent/rules/memory.md](.agent/rules/memory.md)). File-based + keyword search is deliberate;
+> a vector DB is a future step, to be recorded as an ADR if a measured need ever justifies it.
+
+## 10. How work gets done
 
 Once tasks are in the queue, an agent (or you) runs the coordination loop per task:
 
