@@ -71,6 +71,16 @@ function validateAdr(frontmatter, root) {
   return validateMarkdownArtifact(validationRoot(root), "adr", frontmatter);
 }
 
+function validateInternalToolRegistry(registry, root) {
+  const result = validateJsonArtifact(validationRoot(root), "internal-tool-registry", registry);
+  const errors = [...result.errors];
+  // The schema validator has no minItems; a registry only does its job when it is non-empty.
+  if (Array.isArray(registry.tools) && registry.tools.length === 0) {
+    errors.push("tools must not be empty");
+  }
+  return { ok: errors.length === 0, errors };
+}
+
 function validateHandoff(file, root) {
   const text = fs.readFileSync(file, "utf8");
   const parsed = parseFrontmatter(text);
@@ -155,6 +165,7 @@ module.exports = {
   validateReviewReport,
   validateShipChecklist,
   validateAdr,
+  validateInternalToolRegistry,
   validateHandoff,
   parseFrontmatter,
   unquote,

@@ -1593,6 +1593,33 @@ test("doctor checks the adr schema", () => {
   assert.match(out, /ok schema:adr/);
 });
 
+// --- tool-discovery protocol (TASK 5) --------------------------------------
+
+test("the internal tool registry is non-empty and schema-valid", () => {
+  const registry = JSON.parse(fs.readFileSync(path.join(repoRoot, "tools", "internal-tool-registry.json"), "utf8"));
+  assert.ok(Array.isArray(registry.tools) && registry.tools.length > 0, "registry has tools");
+  const result = cli.validateInternalToolRegistry(registry, repoRoot);
+  assert.equal(result.ok, true, (result.errors || []).join("; "));
+});
+
+test("validateInternalToolRegistry rejects an empty or malformed registry", () => {
+  const empty = cli.validateInternalToolRegistry({ schema_version: "1.0", tools: [] }, repoRoot);
+  assert.equal(empty.ok, false);
+  assert(empty.errors.some((e) => e.includes("tools")));
+
+  const badKind = cli.validateInternalToolRegistry({
+    schema_version: "1.0",
+    tools: [{ name: "x", kind: "gadget", purpose: "p", usage: "u" }]
+  }, repoRoot);
+  assert.equal(badKind.ok, false);
+});
+
+test("doctor validates the tool registry", () => {
+  const fixture = makeFixture();
+  const out = spawnSync(process.execPath, [cliPath, "doctor"], { cwd: fixture, encoding: "utf8" }).stdout;
+  assert.match(out, /ok tools:registry/);
+});
+
 function configureGitUser(repo) {
   run("git", ["config", "user.email", "test@example.com"], repo);
   run("git", ["config", "user.name", "Test Agent"], repo);
@@ -1623,6 +1650,7 @@ function makeFixture() {
   copyDir("contracts", dir);
   copyDir("cli", dir);
   copyDir("templates", dir);
+  copyDir("tools", dir);
   fs.mkdirSync(path.join(dir, "docs"), { recursive: true });
   fs.mkdirSync(path.join(dir, "tests"), { recursive: true });
   fs.mkdirSync(path.join(dir, ".agent", "rules"), { recursive: true });
