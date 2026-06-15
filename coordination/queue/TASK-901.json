@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-901",
+  "title": "Author the review-report contract and validator",
+  "description": "Add contracts/schemas/v1/review-report.schema.json as a flat markdown-frontmatter schema (required: schema_version const 1.0, project, reviewed_at date-time, decision enum approved|changes_requested; additionalProperties true, like handoff.schema.json). Add validateReviewReport(frontmatter, root) to cli/lib/validate.js using validateMarkdownArtifact, export it, import + re-export it in cli/appbuilder.js, and append 'review-report' to REQUIRED_SCHEMA_NAMES. Test-first: validateReviewReport unit tests (valid frontmatter passes; bad decision and missing required fields fail).",
+  "depends_on": [],
+  "files_touched_estimate": [
+    "contracts/schemas/v1/review-report.schema.json",
+    "cli/lib/validate.js",
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "review-report.schema.json validates flat frontmatter with a decision enum of approved|changes_requested.",
+    "validateReviewReport is exported from cli/lib/validate.js and re-exported from cli/appbuilder.js.",
+    "REQUIRED_SCHEMA_NAMES includes 'review-report' (doctor checks it).",
+    "Full suite passes: node --test \"tests/**/*.test.js\"."
+  ]
+}

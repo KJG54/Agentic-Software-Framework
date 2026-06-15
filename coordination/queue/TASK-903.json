@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-903",
+  "title": "Document the review phase and drop start from the docs",
+  "description": "Add a Review section to README.md (the two verbs, what the gate checks, link to HOWTO) and a thorough review-phase walkthrough to HOWTO.md after the Test section (the two verbs, the gate rules incl. decision == approved, the review-report.md, a failure-mode -> fix table), renumbering the subsequent sections. Drop start from the README placeholder line and the HOWTO 'Later phases' note, leaving only ship. Docs only.",
+  "depends_on": [
+    "TASK-902"
+  ],
+  "files_touched_estimate": [
+    "README.md",
+    "HOWTO.md"
+  ],
+  "acceptance_criteria": [
+    "HOWTO.md has a thorough review-phase walkthrough with the gate rules and a failure-mode table; later sections renumbered.",
+    "README.md has a Review section; the placeholder/later-phases wording lists only ship (no start, no review).",
+    "doctor stays green (no broken plan-interview/onboarding references)."
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-902",
+  "title": "Implement the review verb (init + gate) and remove the start placeholder",
+  "description": "Add cli/lib/review.js exporting review(cwd, args): `review init <slug>` gates on build/<slug>/test-report.json, refuses to overwrite build/<slug>/review-report.md without --force, and seeds flat frontmatter (schema_version 1.0, project, reviewed_at now ISO, decision changes_requested) plus ## Summary / ## Findings / ## Checklist headings (the seeded stub must pass frontmatter validation). `review <slug>` collects failures and passes only when test-report.json exists, review-report.md exists, its frontmatter validates, the required sections are present and non-empty, and decision == approved; on any failure it prints `fail review:` lines, exits 1, and writes nothing new. Wire `case \"review\"` in cli/appbuilder.js and add a 'Review commands:' help block. Remove the `case \"start\"` from the router and drop start from the help placeholder line (leaving ship). Test-first: review init seeds + gates on test-report; happy path (filled sections + decision approved passes); reds (no test-report, no review-report, decision changes_requested, an empty required section); start is now an unknown command.",
+  "depends_on": [
+    "TASK-901"
+  ],
+  "files_touched_estimate": [
+    "cli/lib/review.js",
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "`appbuilder review init <slug>` seeds a schema-valid review-report.md and refuses unless build/<slug>/test-report.json exists.",
+    "`appbuilder review <slug>` passes only when test-report exists, the report validates, required sections are non-empty, and decision == approved; otherwise it exits non-zero and writes nothing new.",
+    "review is routed as its own command with help text; the start command is removed from the router and help.",
+    "Full suite passes: node --test \"tests/**/*.test.js\"."
+  ]
+}
