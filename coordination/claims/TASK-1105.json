@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-1105",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-1105-japanese-to-english-translation",
+  "claimed_at": "2026-06-15T07:18:17.855Z",
+  "heartbeat_at": "2026-06-15T07:18:17.855Z",
+  "expires_at": "2026-06-15T11:18:17.855Z",
+  "files_touched_estimate": [
+    "projects/translator-app/src/translator_app/translate/interface.py",
+    "projects/translator-app/src/translator_app/translate/whisper_ja_en.py",
+    "projects/translator-app/tests/test_translate.py"
+  ],
+  "depends_on": [
+    "TASK-1104"
+  ],
+  "overlap_override": null
+}
