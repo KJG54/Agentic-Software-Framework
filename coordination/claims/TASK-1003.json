@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-1003",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-1003-document-the-ship-phase",
+  "claimed_at": "2026-06-15T05:02:43.790Z",
+  "heartbeat_at": "2026-06-15T05:02:43.790Z",
+  "expires_at": "2026-06-15T09:02:43.790Z",
+  "files_touched_estimate": [
+    "README.md",
+    "HOWTO.md"
+  ],
+  "depends_on": [
+    "TASK-1002"
+  ],
+  "overlap_override": null
+}
