@@ -14,6 +14,9 @@ Run `appbuilder templates` (add `--json` for scripts) to list what's currently a
 | `library` | A zero-dependency Node module with an exported API and a test. |
 | `app` | A zero-dependency `node:http` service (`handler` + `start(port)`). |
 | `game` | A terminal game: a pure `step()` reducer plus a thin stdin loop. |
+| `api` | A zero-dependency JSON REST API: a pure `dispatch()` router served over `node:http`. |
+| `automation` | A batch/automation script: a pure `process()` pipeline plus a thin runner, for cron/CI. |
+| `frontend` | A Vite + React SPA. Pure view-logic lives in `src/lib/` (tested by `node --test`); the React app needs `npm install`. |
 
 ## Authoring a new template
 
@@ -67,10 +70,15 @@ contents** (literal string replace — no logic, no expression language):
 
 The shipped templates follow these — match them so generated projects behave consistently:
 
-- **Zero runtime dependencies.** Use only `node:` built-ins; no `npm install` required.
-- **`node --test` compatible.** Ship a `test/` that passes out of the box. Keep logic testable
-  without a TTY or a fixed port (e.g. the `app` template exports `start(port)` so tests bind
-  `listen(0)`; the `game` template isolates a pure reducer).
+- **Zero runtime dependencies** where practical. Use only `node:` built-ins; no `npm install`
+  required. The one exception is `frontend` (Vite + React genuinely needs npm) — and even there
+  the rule below still holds.
+- **`node --test` compatible.** Ship a `test/` that passes out of the box under bare
+  `node --test` (that is exactly what `appbuilder test` runs — not `npm test`). Keep logic
+  testable without a TTY, a fixed port, or installed deps: the `app`/`api` templates export
+  `start(port)` so tests bind `listen(0)`; the `game`/`automation` templates isolate a pure
+  function; the `frontend` template puts its testable logic in dependency-free `src/lib/` modules
+  so the gate passes even before `npm install`.
 - **Only `{{slug}}`/`{{summary}}`.** Don't invent placeholders; the variable set is intentionally
   small.
 

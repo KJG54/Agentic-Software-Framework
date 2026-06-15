@@ -40,7 +40,8 @@ matching Phase B track.
    → seeds the top entry in `goals`.
 3. **Who uses it, and in what context?** (who, where, how often, what they bring)
    → seeds `constraints` and frames the features.
-4. **Which best describes it — a game, a CLI tool, an app, a library, or something else?**
+4. **Which best describes it — a game, a CLI tool, an app, a JSON API, an automation/script, a
+   web frontend, a library, or something else?**
    → seeds `build_type` (a lowercase slug) and routes to the matching **Phase B** track below
    (use the generic fallback for "something else"). `build_type` is dir-driven, not a fixed
    enum — run `appbuilder templates` for the live list of build types `scaffold` can render.
@@ -88,6 +89,30 @@ each track feeds is noted.
 3. **Language / runtime** — language, minimum version, dependency limits. → `constraints`
 4. **Versioning & stability** — semver expectations, what's public vs internal. → `constraints`
 5. **Docs & examples** — what must ship for adoption (README, examples)? → `features`
+
+### Track: API (JSON / HTTP service)
+
+1. **Resources & endpoints** — the main paths and methods (e.g. `GET /items`, `POST /items`). → `features`
+2. **Request / response shapes** — what JSON goes in and comes back per endpoint. → `features`
+3. **Auth & access** — who can call it; tokens, keys, or open? → `features`, `constraints`
+4. **Status & errors** — success codes and how each failure is reported. → `features`
+5. **Persistence & dependencies** — datastore, upstream services, runtime limits. → `constraints`
+
+### Track: Automation / script
+
+1. **Trigger** — how it runs: cron, CI, manual, on an event? → `constraints`
+2. **Inputs** — the source it reads (files, API, queue, env). → `features`
+3. **Transform** — the core processing step(s) between input and output. → `features`
+4. **Outputs & side effects** — what it writes/sends, and idempotency. → `features`, `constraints`
+5. **Success / failure signal** — exit code, log, alert on failure. → `goals`, `constraints`
+
+### Track: Frontend (web SPA)
+
+1. **Key screens / views** — the 2–4 views that matter most. → `features`
+2. **State & interactions** — what the user changes and how the UI reacts. → `features`
+3. **Data source** — which API/backend it talks to (or static). → `features`, `constraints`
+4. **Framework & tooling** — React/Vite by default; any constraint otherwise. → `constraints`
+5. **Testable logic** — the pure view-logic worth unit-testing (lives in `src/lib/`). → `features`
 
 ### Track: Generic fallback (anything else)
 

@@ -118,7 +118,7 @@ Don't worry if some words are unfamiliar — the next section defines every one 
 | **Plan** | The set of three files that describe a project: its *requirements* (what to build), its *architecture* (how it fits together), and its *task plan* (the list of jobs to do). |
 | **Task** | One unit of work from the plan, with an ID like `TASK-001`. |
 | **Scaffold** | The starter files for a project, generated from a reusable template — like a framed house before the rooms are finished. |
-| **Template** | A reusable starter kit for a *type* of project. Four ship today: `cli` (a command-line tool), `library` (reusable code), `app` (a small web service), and `game` (a terminal game). |
+| **Template** | A reusable starter kit for a *type* of project. Seven ship today: `cli` (a command-line tool), `library` (reusable code), `app` (a small web service), `game` (a terminal game), `api` (a JSON REST API), `automation` (a batch/cron script), and `frontend` (a Vite + React web app). Run `appbuilder templates` for the live list. |
 | **Build** | The phase where the code actually gets written, task by task. |
 | **Test** | The phase where the tool runs the project's own automated checks and confirms they pass. |
 | **Review** | The phase where a person reads the finished work and writes down their judgment, ending in *approved* or *changes requested*. |

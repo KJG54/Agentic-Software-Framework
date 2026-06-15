@@ -909,6 +909,39 @@ test("scaffold renders the game template with a testable pure reducer", { timeou
   assert.equal(rendered.status, 0, rendered.stdout + rendered.stderr);
 });
 
+// --- new templates: api / automation / frontend (TASK 4) -------------------
+
+for (const { build_type, testFile } of [
+  { build_type: "api", testFile: "test/router.test.js" },
+  { build_type: "automation", testFile: "test/pipeline.test.js" },
+  { build_type: "frontend", testFile: "test/format.test.js" }
+]) {
+  test(`scaffold renders the ${build_type} template with a passing starter test`, { timeout: 30000 }, () => {
+    const fixture = makeFixture();
+    run(process.execPath, [cliPath, "plan", "new", "demo-app"], fixture);
+    const projectDir = path.join(fixture, "projects", "demo-app");
+    writeFilledPlan(projectDir, { build_type });
+
+    const result = run(process.execPath, [cliPath, "scaffold", "demo-app"], fixture);
+    assert.match(result.stdout, /scaffolded demo-app/);
+
+    const buildDir = path.join(fixture, "build", "demo-app");
+    const pkg = JSON.parse(fs.readFileSync(path.join(buildDir, "package.json"), "utf8"));
+    assert.equal(pkg.name, "demo-app");
+
+    // Report reflects the template and is schema-valid; no unrendered placeholders remain.
+    const report = JSON.parse(fs.readFileSync(path.join(buildDir, "scaffold-report.json"), "utf8"));
+    assert.equal(report.build_type, build_type);
+    assert.equal(report.template, build_type);
+    assert(report.rendered_files.includes(testFile));
+    assert.equal(cli.validateScaffoldReport(report, fixture).ok, true);
+
+    // The starter test passes via the same bare `node --test` the test phase runs.
+    const rendered = spawnSync(process.execPath, ["--test", testFile], { cwd: buildDir, encoding: "utf8", stdio: "pipe" });
+    assert.equal(rendered.status, 0, rendered.stdout + rendered.stderr);
+  });
+}
+
 test("templates lists the available build-type templates (human and --json)", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   // .gitkeep and a malformed manifest must be skipped without crashing.
@@ -917,7 +950,7 @@ test("templates lists the available build-type templates (human and --json)", { 
 
   // Human-readable by default.
   const human = run(process.execPath, [cliPath, "templates"], fixture);
-  for (const id of ["cli", "library", "app", "game"]) {
+  for (const id of ["cli", "library", "app", "game", "api", "automation", "frontend"]) {
     assert.match(human.stdout, new RegExp(`\\b${id}\\b`), `human output should list ${id}`);
   }
   assert.doesNotMatch(human.stdout, /broken/);
@@ -927,7 +960,7 @@ test("templates lists the available build-type templates (human and --json)", { 
   const list = JSON.parse(json.stdout);
   assert(Array.isArray(list));
   const ids = list.map((entry) => entry.id).sort();
-  assert.deepEqual(ids, ["app", "cli", "game", "library"]);
+  assert.deepEqual(ids, ["api", "app", "automation", "cli", "frontend", "game", "library"]);
   for (const entry of list) {
     assert(entry.name && entry.description, `${entry.id} should carry name + description`);
   }
