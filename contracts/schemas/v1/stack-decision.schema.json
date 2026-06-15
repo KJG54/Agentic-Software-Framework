@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://app-builder.local/contracts/schemas/v1/stack-decision.schema.json",
+  "title": "Stack Decision",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "project",
+    "recommended_stack",
+    "rationale",
+    "tradeoffs",
+    "alternatives_considered",
+    "human_decision_needed"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "project": { "type": "string", "minLength": 1 },
+    "recommended_stack": { "type": "string" },
+    "rationale": { "type": "string" },
+    "tradeoffs": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "alternatives_considered": { "type": "array", "items": { "type": "string" }, "default": [] },
+    "human_decision_needed": { "type": "boolean" }
+  },
+  "additionalProperties": true
+}

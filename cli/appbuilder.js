@@ -57,7 +57,7 @@ const { review } = require("./lib/review");
 const { ship } = require("./lib/ship");
 const { decision } = require("./lib/decision");
 
-const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report", "build-manifest", "build-report", "test-report", "review-report", "ship-checklist", "adr", "internal-tool-registry"];
+const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "stack-decision", "scaffold-report", "build-manifest", "build-report", "test-report", "review-report", "ship-checklist", "adr", "internal-tool-registry"];
 
 function main(argv = process.argv.slice(2), cwd = process.cwd()) {
   const command = argv[0] || "help";
@@ -129,8 +129,8 @@ Core coordination commands:
   events                   Derive coordination events from Git history
 
 Planning commands:
-  plan new <slug>          Scaffold a project plan (requirements, architecture, task-plan)
-  plan compile <slug>      Validate requirements and the task plan
+  plan new <slug>          Scaffold a project plan (requirements, architecture, task-plan, stack-decision)
+  plan compile <slug>      Validate requirements, the task plan, and the stack decision
   plan seed <slug>         Publish the plan's tasks to the coordination queue
   scaffold <slug>          Render the build-type skeleton into build/<slug> (--force to overwrite)
   templates                List available build-type templates (--json for a machine-readable list)
