@@ -175,6 +175,41 @@ test("test-report validation requires the core report fields", () => {
   assert.equal(extraField.ok, false);
 });
 
+test("review-report validation requires valid frontmatter and a known decision", () => {
+  const good = cli.validateReviewReport({
+    schema_version: "1.0",
+    project: "demo",
+    reviewed_at: new Date().toISOString(),
+    decision: "approved"
+  }, repoRoot);
+  assert.equal(good.ok, true, (good.errors || []).join("; "));
+
+  // changes_requested is also a valid decision.
+  const pending = cli.validateReviewReport({
+    schema_version: "1.0",
+    project: "demo",
+    reviewed_at: new Date().toISOString(),
+    decision: "changes_requested"
+  }, repoRoot);
+  assert.equal(pending.ok, true, (pending.errors || []).join("; "));
+
+  // an unknown decision is rejected.
+  const badDecision = cli.validateReviewReport({
+    schema_version: "1.0",
+    project: "demo",
+    reviewed_at: new Date().toISOString(),
+    decision: "lgtm"
+  }, repoRoot);
+  assert.equal(badDecision.ok, false);
+
+  // required fields must be present.
+  const missing = cli.validateReviewReport({
+    schema_version: "1.0",
+    project: "demo"
+  }, repoRoot);
+  assert.equal(missing.ok, false);
+});
+
 test("cli template manifest is valid and its required_files exist", () => {
   const templateDir = path.join(repoRoot, "templates", "cli");
   const manifest = JSON.parse(fs.readFileSync(path.join(templateDir, "template.json"), "utf8"));

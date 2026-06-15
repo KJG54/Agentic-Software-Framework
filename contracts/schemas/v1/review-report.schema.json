@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://app-builder.local/contracts/schemas/v1/review-report.schema.json",
+  "title": "Review Report Frontmatter",
+  "type": "object",
+  "required": ["schema_version", "project", "reviewed_at", "decision"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "project": { "type": "string", "minLength": 1 },
+    "reviewed_at": { "type": "string", "format": "date-time" },
+    "decision": { "enum": ["approved", "changes_requested"] }
+  },
+  "additionalProperties": true
+}

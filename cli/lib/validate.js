@@ -59,6 +59,10 @@ function validateTestReport(report, root) {
   return validateJsonArtifact(validationRoot(root), "test-report", report);
 }
 
+function validateReviewReport(frontmatter, root) {
+  return validateMarkdownArtifact(validationRoot(root), "review-report", frontmatter);
+}
+
 function validateHandoff(file, root) {
   const text = fs.readFileSync(file, "utf8");
   const parsed = parseFrontmatter(text);
@@ -140,6 +144,7 @@ module.exports = {
   validateBuildManifest,
   validateBuildReport,
   validateTestReport,
+  validateReviewReport,
   validateHandoff,
   parseFrontmatter,
   unquote,
