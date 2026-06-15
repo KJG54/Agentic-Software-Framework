@@ -43,6 +43,10 @@ function validateTaskPlan(doc, root) {
   return validateJsonArtifact(validationRoot(root), "task-plan", doc);
 }
 
+function validateStackDecision(doc, root) {
+  return validateJsonArtifact(validationRoot(root), "stack-decision", doc);
+}
+
 function validateScaffoldReport(report, root) {
   return validateJsonArtifact(validationRoot(root), "scaffold-report", report);
 }
@@ -158,6 +162,7 @@ module.exports = {
   validateRegistryEntry,
   validateRequirements,
   validateTaskPlan,
+  validateStackDecision,
   validateScaffoldReport,
   validateBuildManifest,
   validateBuildReport,

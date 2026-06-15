@@ -12,7 +12,8 @@ const {
   loadProject,
   validateQueueTask,
   validateRequirements,
-  validateTaskPlan
+  validateTaskPlan,
+  validateStackDecision
 } = require("./validate");
 const { ensureCoordinationWorktree, commitIfChanged, maybePush } = require("./coordination");
 
@@ -54,6 +55,15 @@ function planNew(project, slug) {
     schema_version: "1.0",
     project: slug,
     tasks: []
+  });
+  writeJson(path.join(dir, "stack-decision.json"), {
+    schema_version: "1.0",
+    project: slug,
+    recommended_stack: "",
+    rationale: "",
+    tradeoffs: [],
+    alternatives_considered: [],
+    human_decision_needed: false
   });
   writeText(path.join(dir, "architecture.md"), buildArchitectureStub(slug));
   console.log(`created plan for ${slug}`);
@@ -127,6 +137,21 @@ function compilePlan(project, slug) {
       for (const dependency of (task && task.depends_on) || []) {
         if (!ids.has(dependency)) failures.push(`task-plan: ${task.id} depends_on ${dependency} which is not in the plan`);
       }
+    }
+  }
+
+  // Stack-decision checkpoint (spec Checkpoint 3): a recommended stack with its tradeoffs and
+  // alternatives must exist before the human approval gate, so the choice is explicit and
+  // reviewable rather than buried in architecture.md prose.
+  const stackPath = path.join(dir, "stack-decision.json");
+  if (!fs.existsSync(stackPath)) {
+    failures.push(`stack-decision: not found: ${slug}/stack-decision.json (run appbuilder plan new ${slug})`);
+  } else {
+    const stackDecision = readJson(stackPath);
+    const stackValidation = validateStackDecision(stackDecision, project.root);
+    if (!stackValidation.ok) failures.push(...stackValidation.errors.map((error) => `stack-decision: ${error}`));
+    if (!String(stackDecision.recommended_stack || "").trim()) {
+      failures.push("stack-decision: recommended_stack must be non-empty");
     }
   }
 
