@@ -32,6 +32,7 @@ const {
   validateReviewReport,
   validateShipChecklist,
   validateAdr,
+  validateInternalToolRegistry,
   parseFrontmatter
 } = require("./lib/validate");
 const {
@@ -56,7 +57,7 @@ const { review } = require("./lib/review");
 const { ship } = require("./lib/ship");
 const { decision } = require("./lib/decision");
 
-const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report", "build-manifest", "build-report", "test-report", "review-report", "ship-checklist", "adr"];
+const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report", "build-manifest", "build-report", "test-report", "review-report", "ship-checklist", "adr", "internal-tool-registry"];
 
 function main(argv = process.argv.slice(2), cwd = process.cwd()) {
   const command = argv[0] || "help";
@@ -197,6 +198,22 @@ function doctor(cwd) {
     check(`schema:${schema}`, fs.existsSync(path.join(root, "contracts", "schemas", "v1", `${schema}.schema.json`)), "exists");
   }
 
+  // Tool-discovery protocol: the internal tool registry must exist and stay schema-valid, so the
+  // "check existing tools before building new" rule (.agent/rules/tool-discovery.md) has a live
+  // catalog to point at rather than an empty folder.
+  const registryPath = path.join(root, "tools", "internal-tool-registry.json");
+  if (!fs.existsSync(registryPath)) {
+    check("tools:registry", false, "tools/internal-tool-registry.json missing");
+  } else {
+    try {
+      const registry = readJson(registryPath);
+      const result = validateInternalToolRegistry(registry, root);
+      check("tools:registry", result.ok, result.ok ? `${(registry.tools || []).length} tools` : result.errors.join("; "));
+    } catch (error) {
+      check("tools:registry", false, error.message);
+    }
+  }
+
   // Agent onboarding: the framework is only drivable if an agent dropped into the repo
   // auto-loads its charter. AGENTS.md is the canonical source; CLAUDE.md must point at it.
   check("onboarding:AGENTS.md", fs.existsSync(path.join(root, "AGENTS.md")), "exists");
@@ -331,6 +348,7 @@ module.exports = {
   validateReviewReport,
   validateShipChecklist,
   validateAdr,
+  validateInternalToolRegistry,
   parseFrontmatter,
   buildHandoffMarkdown,
   pathsOverlap,

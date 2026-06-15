@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "tools": [
+    {
+      "name": "appbuilder CLI",
+      "kind": "cli-command",
+      "purpose": "The control plane for the whole loop — plan, scaffold, build, test, review, ship, plus coordination (claim/handoff/ready/release), decision (ADR), doctor, and status. No LLM; it scaffolds, validates, and coordinates.",
+      "usage": "node cli/appbuilder.js <command>  (run `node cli/appbuilder.js help` for the full verb list)",
+      "maintenance": "cli/appbuilder.js (router) + cli/lib/*.js (handlers); every artifact-writing verb validates against a contracts/schemas/v1 schema before writing.",
+      "alternatives_considered": ["Hand-editing coordination/artifact state (rejected: must go through the CLI so validation and the gates are enforced)"]
+    },
+    {
+      "name": "schema-validator",
+      "kind": "library",
+      "purpose": "The single artifact-validation seam: validates JSON and markdown-frontmatter artifacts against contracts/schemas/v1/*.schema.json. Use it instead of hand-rolling validation.",
+      "usage": "require('core/validation/schema-validator') or the wrappers in cli/lib/validate.js (validateRequirements, validateAdr, ...)",
+      "maintenance": "core/validation/schema-validator.js — custom recursive validator (no AJV); a future AJV swap changes only this file."
+    },
+    {
+      "name": "template:app",
+      "kind": "template",
+      "purpose": "Scaffold a minimal application skeleton (server + test).",
+      "usage": "set requirements.build_type to 'app', then `appbuilder scaffold <slug>`"
+    },
+    {
+      "name": "template:cli",
+      "kind": "template",
+      "purpose": "Scaffold a zero-dependency Node CLI tool skeleton.",
+      "usage": "set requirements.build_type to 'cli', then `appbuilder scaffold <slug>`"
+    },
+    {
+      "name": "template:game",
+      "kind": "template",
+      "purpose": "Scaffold a small game skeleton (game loop + test).",
+      "usage": "set requirements.build_type to 'game', then `appbuilder scaffold <slug>`"
+    },
+    {
+      "name": "template:library",
+      "kind": "template",
+      "purpose": "Scaffold a reusable library skeleton (public API + test).",
+      "usage": "set requirements.build_type to 'library', then `appbuilder scaffold <slug>`"
+    },
+    {
+      "name": "decision (ADR flow)",
+      "kind": "cli-command",
+      "purpose": "Capture an Architecture Decision Record (validated markdown) in vault/framework/decisions/ — the durable home for design decisions.",
+      "usage": "appbuilder decision add --title ... --context ... --decision ... --consequences ... [--status --date --option]",
+      "maintenance": "cli/lib/decision.js + contracts/schemas/v1/adr.schema.json"
+    },
+    {
+      "name": "vault (file-based memory)",
+      "kind": "service",
+      "purpose": "The framework's memory store: ADRs (decisions/), lessons (lessons/), known problems, and per-project notes — file-based and greppable, browsable as an Obsidian vault. Consult it before building something new.",
+      "usage": "Browse vault/framework/ and vault/projects/; ADRs are written via `appbuilder decision add`. Lives on the working branch, never the coordination branch."
+    }
+  ]
+}
