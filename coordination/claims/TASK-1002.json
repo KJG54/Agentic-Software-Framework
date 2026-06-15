@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-1002",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-1002-implement-the-ship-verb-full-chain-generator-and",
+  "claimed_at": "2026-06-15T04:51:50.404Z",
+  "heartbeat_at": "2026-06-15T04:51:50.404Z",
+  "expires_at": "2026-06-15T08:51:50.404Z",
+  "files_touched_estimate": [
+    "cli/lib/ship.js",
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "depends_on": [
+    "TASK-1001"
+  ],
+  "overlap_override": null
+}
