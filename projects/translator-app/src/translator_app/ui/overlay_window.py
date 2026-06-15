@@ -123,6 +123,23 @@ def build_overlay(config: Optional[OverlayConfig] = None, *, qt_modules=None):
     return widget
 
 
+def build_controls_window(*, qt_modules=None):
+    """Create the interactive controls window the exit button + settings bar live in.
+
+    The subtitle canvas from :func:`build_overlay` is fully click-through, which
+    is correct for captions but fatal for controls: a button parented to it can
+    be *seen* but never *clicked* -- the press falls straight through to whatever
+    is behind the overlay. So the controls get their own top-level window that is
+    still frameless, always-on-top, tool-style and translucent, but **not**
+    click-through, so it actually receives mouse input. ``fullscreen=False`` so
+    the caller can size it to a thin top strip; :func:`enable_windows_click_through`
+    must *not* be applied to it.
+    """
+    return build_overlay(
+        OverlayConfig(fullscreen=False, click_through=False), qt_modules=qt_modules
+    )
+
+
 def enable_windows_click_through(window) -> bool:
     """Best-effort: add ``WS_EX_LAYERED | WS_EX_TRANSPARENT`` so clicks fall through.
 
