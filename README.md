@@ -97,4 +97,24 @@ seeds an accounting stub and then validates what the agent declares.
 
 See [HOWTO.md](HOWTO.md) for the full operator walkthrough.
 
-The workflow commands `start`, `test`, `review`, and `ship` are present as placeholders for later phases.
+## Test
+
+```bash
+appbuilder test <slug>              # run the built project's tests, write build/<slug>/test-report.json
+```
+
+`test` is the gate after `build` — and the first phase where the CLI *runs* something rather than
+only validating declarations. Still **no LLM**: it executes the built project's own suite with
+`node --test` inside `build/<slug>/`, parses the results, and gates on a clean green.
+
+- It first checks that `build/<slug>/build-report.json` exists — you cannot test what was not
+  built.
+- The gate passes only when a build report exists, **at least one test ran**, and **zero tests
+  failed** (a test-first build must never green on nothing).
+- On success it writes `build/<slug>/test-report.json` (the exact command plus pass/fail/skip
+  counts) for the review phase to consume; on any failure it prints the test output and writes
+  nothing — so a report on disk always means the gate passed.
+
+See [HOWTO.md](HOWTO.md) for the full operator walkthrough.
+
+The workflow commands `start`, `review`, and `ship` are present as placeholders for later phases.
