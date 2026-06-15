@@ -117,4 +117,27 @@ only validating declarations. Still **no LLM**: it executes the built project's 
 
 See [HOWTO.md](HOWTO.md) for the full operator walkthrough.
 
-The workflow commands `start`, `review`, and `ship` are present as placeholders for later phases.
+## Review
+
+```bash
+appbuilder review init <slug>       # seed build/<slug>/review-report.md (gated on test-report.json)
+appbuilder review init <slug> --force # re-seed an existing review
+appbuilder review <slug>            # validate the filled-in review, gate on decision: approved
+```
+
+`review` is the gate after `test`, before `ship` — still **no LLM**. Unlike the earlier phases it
+produces a *prose* artifact, `build/<slug>/review-report.md` (markdown with YAML frontmatter, like
+`architecture.md`). The agent/human writes the review; the CLI seeds a structured stub and
+validates it.
+
+- `review init` gates on `build/<slug>/test-report.json` (you cannot review an untested build) and
+  seeds a stub with frontmatter (`decision: changes_requested`) plus `## Summary` / `## Findings` /
+  `## Checklist` headings. It refuses to overwrite without `--force`.
+- `review <slug>` passes only when the test report exists, the review report's frontmatter
+  validates, the required sections are non-empty, **and `decision: approved`**. On failure it
+  prints every problem and writes nothing. Approval lives in the `decision` frontmatter for the
+  ship phase to read.
+
+See [HOWTO.md](HOWTO.md) for the full operator walkthrough.
+
+The workflow command `ship` is present as a placeholder for the final phase.
