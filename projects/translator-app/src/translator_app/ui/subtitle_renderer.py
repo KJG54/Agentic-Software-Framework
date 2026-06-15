@@ -162,6 +162,12 @@ class SubtitleRenderer:
             f" padding: 8px; margin: {self.style.margin_px}px;"
         )
 
+    def set_style(self, style: "SubtitleStyle") -> None:
+        """Swap the appearance and re-apply it. Used to wire the live settings bar
+        (font size / position / opacity) to the on-screen captions."""
+        self.style = style
+        self._apply_style()
+
     def ingest(self, segment: object, *, now: float) -> None:
         self.model.ingest(segment, now=now)
 
