@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-1111",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-1111-package-as-windows-executable",
+  "claimed_at": "2026-06-15T08:03:00.553Z",
+  "heartbeat_at": "2026-06-15T08:03:00.553Z",
+  "expires_at": "2026-06-15T12:03:00.553Z",
+  "files_touched_estimate": [
+    "projects/translator-app/packaging/translator-app.spec",
+    "projects/translator-app/README.md",
+    "projects/translator-app/tests/test_packaging_config.py"
+  ],
+  "depends_on": [
+    "TASK-1105",
+    "TASK-1107",
+    "TASK-1109",
+    "TASK-1110"
+  ],
+  "overlap_override": null
+}
