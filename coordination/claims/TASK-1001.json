@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-1001",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-1001-author-the-ship-checklist-contract-and-validator",
+  "claimed_at": "2026-06-15T04:46:20.672Z",
+  "heartbeat_at": "2026-06-15T04:46:20.672Z",
+  "expires_at": "2026-06-15T08:46:20.672Z",
+  "files_touched_estimate": [
+    "contracts/schemas/v1/ship-checklist.schema.json",
+    "cli/lib/validate.js",
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "depends_on": [],
+  "overlap_override": null
+}
