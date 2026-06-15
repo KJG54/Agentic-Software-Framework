@@ -1203,6 +1203,88 @@ test("review gate rejects missing test-report, missing report, changes_requested
   assert.match(notApproved.stdout + notApproved.stderr, /approved/);
 });
 
+// Drive a project through scaffold -> build -> test, then drop an approved review-report.md so the
+// ship phase sees a complete, approved chain.
+function reviewedDemoApp(fixture) {
+  const buildDir = testedDemoApp(fixture);
+  fs.writeFileSync(path.join(buildDir, "review-report.md"), approvedReview("demo-app"));
+  return buildDir;
+}
+
+test("ship writes a schema-valid checklist when the full chain passes", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  const buildDir = reviewedDemoApp(fixture);
+  const checklistPath = path.join(buildDir, "ship-checklist.md");
+
+  const result = run(process.execPath, [cliPath, "ship", "demo-app"], fixture);
+  assert.match(result.stdout, /ship demo-app/);
+  assert(fs.existsSync(checklistPath), "ship-checklist.md should be written on a passing chain");
+
+  const text = fs.readFileSync(checklistPath, "utf8");
+  const parsed = cli.parseFrontmatter(text);
+  assert.equal(cli.validateShipChecklist(parsed.data, fixture).ok, true, "generated frontmatter must be schema-valid");
+  assert.equal(parsed.data.review_decision, "approved");
+  assert.equal(parsed.data.project, "demo-app");
+  assert(parsed.data.shipped_at, "shipped_at is set");
+
+  // reviewed_at is carried through from the review-report.md frontmatter.
+  const review = cli.parseFrontmatter(fs.readFileSync(path.join(buildDir, "review-report.md"), "utf8"));
+  assert.equal(parsed.data.reviewed_at, review.data.reviewed_at);
+
+  // The required sections are present, with real test counts and the built file.
+  const testReport = JSON.parse(fs.readFileSync(path.join(buildDir, "test-report.json"), "utf8"));
+  for (const heading of ["## Phase Summary", "## Artifacts", "## Manual Go-Live Steps"]) {
+    assert.match(text, new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+  assert.match(text, new RegExp(`${testReport.tests_passed}`), "phase summary reports the passed count");
+  assert.match(text, /src\/index\.js/, "artifacts list the built file");
+  assert.match(text, /- \[ \]/, "manual go-live steps are unchecked checkboxes");
+});
+
+test("ship gate fails on each missing upstream report and on a non-approved review", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  const buildDir = reviewedDemoApp(fixture);
+  const checklistPath = path.join(buildDir, "ship-checklist.md");
+
+  // Removing any one upstream report -> the gate fails, exits non-zero, and writes nothing.
+  for (const report of ["scaffold-report.json", "build-report.json", "test-report.json"]) {
+    const reportPath = path.join(buildDir, report);
+    const saved = fs.readFileSync(reportPath, "utf8");
+    fs.rmSync(reportPath);
+    const missing = runFail(process.execPath, [cliPath, "ship", "demo-app"], fixture);
+    assert.match(missing.stdout + missing.stderr, /fail ship:/);
+    assert.match(missing.stdout + missing.stderr, new RegExp(report.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert(!fs.existsSync(checklistPath), `no checklist written when ${report} is missing`);
+    fs.writeFileSync(reportPath, saved);
+  }
+
+  // A review that is not approved -> the gate fails and writes nothing.
+  fs.writeFileSync(path.join(buildDir, "review-report.md"), approvedReview("demo-app", "changes_requested"));
+  const notApproved = runFail(process.execPath, [cliPath, "ship", "demo-app"], fixture);
+  assert.match(notApproved.stdout + notApproved.stderr, /fail ship:/);
+  assert.match(notApproved.stdout + notApproved.stderr, /approved/);
+  assert(!fs.existsSync(checklistPath), "no checklist written for a non-approved review");
+});
+
+test("ship refuses to overwrite an existing checklist without --force", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  const buildDir = reviewedDemoApp(fixture);
+  const checklistPath = path.join(buildDir, "ship-checklist.md");
+
+  run(process.execPath, [cliPath, "ship", "demo-app"], fixture);
+  // Simulate a human ticking a go-live box; a re-run must not wipe it.
+  const ticked = fs.readFileSync(checklistPath, "utf8").replace("- [ ]", "- [x]");
+  fs.writeFileSync(checklistPath, ticked);
+
+  const refused = runFail(process.execPath, [cliPath, "ship", "demo-app"], fixture);
+  assert.match(refused.stdout + refused.stderr, /already exists|--force/);
+  assert.match(fs.readFileSync(checklistPath, "utf8"), /- \[x\]/, "the human's tick survives a refused re-run");
+
+  // --force regenerates from scratch (the tick is intentionally reset).
+  run(process.execPath, [cliPath, "ship", "demo-app", "--force"], fixture);
+  assert.match(fs.readFileSync(checklistPath, "utf8"), /- \[ \]/, "--force regenerates the checklist");
+});
+
 test("start is no longer a recognized command", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   const removed = runFail(process.execPath, [cliPath, "start"], fixture);
