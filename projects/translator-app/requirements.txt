@@ -6,11 +6,20 @@
 #
 #     python -m pip install -r requirements.txt
 #
-# GPU note: faster-whisper uses CTranslate2, which needs a CUDA-capable build
-# and matching NVIDIA drivers to run on the GPU.
+# GPU note: faster-whisper uses CTranslate2, which loads the CUDA runtime
+# (cuBLAS/cuDNN) lazily at the first inference. The nvidia-*-cu12 wheels below
+# provide those DLLs; the app surfaces them on PATH at startup and the packaging
+# spec bundles them into the exe. Without a usable GPU the app probes once and
+# falls back to CPU automatically (see translate/whisper_ja_en.py), so these are
+# only needed for GPU acceleration / building the GPU exe.
 
 # --- Speech recognition + translation (TASK-1104, TASK-1105) ---
 faster-whisper>=1.0
+
+# --- CUDA runtime for GPU inference (ctranslate2 targets CUDA 12) ---
+nvidia-cublas-cu12
+nvidia-cudnn-cu12>=9,<10
+nvidia-cuda-runtime-cu12
 
 # --- System (loopback) audio capture (TASK-1102, TASK-1103) ---
 # WASAPI loopback capture on Windows.
