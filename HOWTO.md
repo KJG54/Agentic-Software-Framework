@@ -255,9 +255,85 @@ on disk always means the gate passed. Common failures and their fixes:
 | `N test(s) failed` | Read the printed output, fix the code or the test, and re-run. |
 
 Re-run `appbuilder test <slug>` until it passes. The resulting `test-report.json` is what the
-`review` phase (a later slice) will build on.
+`review` phase consumes next.
 
-## 6. How work gets done
+## 6. Review the build (`test-report.json` → `review-report.md`)
+
+`review` is the gate after `test`, before `ship`. Like every phase it has **no LLM** — but unlike
+scaffold/build/test (which emit machine-written JSON reports), review's artifact is *prose*:
+`build/<slug>/review-report.md`, a markdown file with YAML frontmatter (the same shape as
+`architecture.md`/`handoff.md`). The agent or human writes the review; the CLI seeds a structured
+stub and then validates it. It is a two-verb flow, mirroring `build init` → `build`.
+
+```bash
+appbuilder review init my-app          # seed the review-report.md stub
+appbuilder review init my-app --force  # re-seed an existing review
+appbuilder review my-app               # validate the filled-in review and gate
+```
+
+### Step 1 — `review init`: seed the report
+
+`review init` gates on `build/my-app/test-report.json` (you cannot review an untested build) and
+writes `build/my-app/review-report.md` with frontmatter and empty sections to fill:
+
+```markdown
+---
+schema_version: "1.0"
+project: my-app
+reviewed_at: 2026-06-14T00:00:00.000Z
+decision: changes_requested
+---
+
+# Review: my-app
+
+## Summary
+
+_What was built and tested, and the overall assessment._
+
+## Findings
+
+_Issues, risks, and observations from the review._
+
+## Checklist
+
+_What you verified: requirements met, tests meaningful, no obvious gaps._
+```
+
+`decision` starts at `changes_requested` so the gate stays red until you deliberately approve. It
+refuses to overwrite an existing report without `--force`.
+
+### Step 2 — the reviewer fills it in
+
+Write the actual review under each heading, then — once you're satisfied — set `decision: approved`
+in the frontmatter. The body is yours; the three sections (`## Summary`, `## Findings`,
+`## Checklist`) must each carry real content.
+
+### Step 3 — `review`: validate and gate
+
+`appbuilder review my-app` is the gate. It **passes only when**:
+
+1. `build/my-app/test-report.json` exists (the build was tested).
+2. `build/my-app/review-report.md` exists.
+3. Its frontmatter validates (`schema_version`, `project`, `reviewed_at`, and a `decision` of
+   `approved` or `changes_requested`).
+4. The `## Summary`, `## Findings`, and `## Checklist` sections are all present and non-empty.
+5. `decision` is `approved`.
+
+On **any** failure it prints each problem as a `fail review: …` line, exits non-zero, and writes
+nothing new — `review-report.md` *is* the artifact, and your approval is recorded in its `decision`
+field for the ship phase to read. Common failures and their fixes:
+
+| `fail review: …` says | Fix |
+| --- | --- |
+| `no test report …` | Run `appbuilder test <slug>` until it passes first. |
+| `no review report …` | Run `appbuilder review init <slug>` and fill it in. |
+| `section ## Findings is empty` | Write real content under every required heading. |
+| `decision is "changes_requested" …` | Address the findings, then set `decision: approved`. |
+
+Re-run `appbuilder review <slug>` until it passes. An approved `review-report.md` is what the
+`ship` phase (a later slice) will build on.
+
+## 7. How work gets done
 
 Once tasks are in the queue, an agent (or you) runs the coordination loop per task:
 
@@ -297,5 +373,5 @@ Codex agents don't get the shortcuts but auto-load the same workflow from [AGENT
 
 ## Later phases
 
-`start`, `review`, and `ship` are placeholders today. They will fill in the rest of the
-loop (`plan → scaffold → build → test → review → ship`) in future slices.
+`ship` is a placeholder today. It will fill in the final step of the loop
+(`plan → scaffold → build → test → review → ship`) in a future slice.
