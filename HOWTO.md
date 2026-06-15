@@ -4,6 +4,10 @@ This guide is for **humans** driving the framework. Agents auto-load their chart
 [AGENTS.md](AGENTS.md) (which points to the detailed rules in [.agent/rules/](.agent/rules/));
 this is the operator's view.
 
+> Want the big picture in plain language first? See **[GUIDE.md](GUIDE.md)** — a nontechnical tour of
+> what the framework is and how the whole workflow fits together. This document is the hands-on,
+> command-by-command manual.
+
 App Builder V2 is a CLI-first workbench. There is **no LLM inside the CLI** — the `appbuilder`
 commands scaffold, validate, and coordinate; the *thinking* (writing requirements, building
 code) is done by you or by AI agents. State that must be shared across agents lives on a

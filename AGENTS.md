@@ -4,8 +4,9 @@ This file is the **canonical entry point** for any agent (Codex, Claude Code, or
 picks up this repository. Read it first. It is intentionally short and points to the detailed
 ruleset rather than repeating it.
 
-> Humans: see [HOWTO.md](HOWTO.md) for the operator's walkthrough. Claude Code loads this file
-> via [CLAUDE.md](CLAUDE.md).
+> Humans: see [GUIDE.md](GUIDE.md) for a plain-language overview of the whole system, or
+> [HOWTO.md](HOWTO.md) for the operator's walkthrough. Claude Code loads this file via
+> [CLAUDE.md](CLAUDE.md).
 
 ## What this is
 
