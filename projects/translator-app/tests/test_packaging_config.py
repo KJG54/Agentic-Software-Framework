@@ -100,6 +100,18 @@ class SpecConfigTest(unittest.TestCase):
         self.assertEqual(exe.kwargs.get("name"), "translator-app")
         self.assertIs(exe.kwargs.get("console"), False, "overlay app must be windowed (no console)")
 
+    def test_bundles_cuda_runtime_dlls(self):
+        # Source-based (not result-based) so it holds regardless of whether the
+        # nvidia-*-cu12 wheels are installed in the build env: the spec must wire
+        # up CUDA-runtime collection and feed it to Analysis(binaries=...).
+        with open(SPEC, "r", encoding="utf-8") as handle:
+            src = handle.read()
+        self.assertIn("collect_dynamic_libs", src, "spec must collect the CUDA runtime DLLs")
+        for pkg in ("nvidia.cublas", "nvidia.cudnn", "nvidia.cuda_runtime"):
+            self.assertIn(pkg, src, f"spec must bundle {pkg}")
+        # And the collected list must be wired into Analysis (not the old binaries=[]).
+        self.assertIn("binaries=cuda_binaries", src, "binaries must use the collected CUDA libs")
+
 
 class EntryScriptTest(unittest.TestCase):
     def test_entry_launches_the_app(self):

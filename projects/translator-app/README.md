@@ -15,21 +15,26 @@ top-right corner.
 
 - **Windows** (uses WASAPI loopback to capture system audio).
 - **Python 3.11+**.
-- An **NVIDIA GPU with CUDA** for real-time Whisper inference (CPU works but is
-  much slower and may not keep up).
+- An **NVIDIA GPU** is strongly recommended for real-time inference (~35x
+  realtime on a mid-range card). The app runs on CPU too (~2x realtime, so
+  subtitles lag a second or two) and **falls back to CPU automatically** when no
+  usable GPU is found — you don't have to configure anything.
 
 ## Setup
 
-Create a virtual environment and install the runtime dependencies:
+Create a virtual environment and install the dependencies:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install faster-whisper PySide6 PyAudioWPatch numpy
+pip install -r requirements.txt
 ```
 
-faster-whisper pulls in `ctranslate2`; for GPU you also need a matching CUDA
-runtime installed on the machine (it is not shipped by this app).
+`requirements.txt` includes the CUDA runtime wheels (`nvidia-*-cu12`) that
+ctranslate2 needs for GPU inference. The app puts those DLLs on the search path
+at startup, so GPU works with **no separate CUDA install**. On a machine without
+an NVIDIA GPU the same install still runs — it probes the GPU once and falls back
+to CPU (see `translate/whisper_ja_en.py`).
 
 ## Run (from source)
 
@@ -75,7 +80,10 @@ Double-click it to run — no console window appears (it's an overlay app).
   `%USERPROFILE%\.cache\huggingface`. This keeps the exe small and lets the
   model-size switch fetch other sizes on demand. The first run of a given model
   size needs an internet connection; subsequent runs use the cache.
-- **CUDA is expected on the host**, not shipped inside the exe.
+- **The CUDA runtime DLLs *are* bundled** (cuBLAS/cuDNN/cudart from the
+  `nvidia-*-cu12` wheels), so the exe uses the host GPU out of the box — no
+  separate CUDA install. This adds a few hundred MB to the exe. On a machine with
+  no usable GPU the app falls back to CPU, so the same exe runs everywhere.
 
 ## Project layout
 

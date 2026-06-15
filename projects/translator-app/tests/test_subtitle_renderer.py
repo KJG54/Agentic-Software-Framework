@@ -142,6 +142,30 @@ class SubtitleRendererQtTest(unittest.TestCase):
         renderer.widget.deleteLater()
         del app
 
+    def test_set_style_updates_font_live(self):
+        try:
+            os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+            from PySide6 import QtWidgets  # noqa: F401
+        except ImportError:
+            self.skipTest("PySide6 not installed")
+
+        from translator_app.ui.subtitle_renderer import (
+            SubtitlePosition,
+            SubtitleRenderer,
+            SubtitleStyle,
+        )
+
+        app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+        renderer = SubtitleRenderer(style=SubtitleStyle(font_size_pt=20))
+        renderer.set_style(SubtitleStyle(font_size_pt=64, position=SubtitlePosition.TOP))
+
+        self.assertEqual(renderer.style.font_size_pt, 64)
+        self.assertEqual(renderer.style.position, SubtitlePosition.TOP)
+        self.assertEqual(renderer.widget.font().pointSize(), 64)
+
+        renderer.widget.deleteLater()
+        del app
+
 
 if __name__ == "__main__":
     unittest.main()

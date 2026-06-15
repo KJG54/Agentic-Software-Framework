@@ -120,5 +120,74 @@ class WhisperJaEnTest(unittest.TestCase):
         self.assertEqual(partials[0].text, "Hello world")
 
 
+class DeviceSelectionTest(unittest.TestCase):
+    """The auto/GPU-probe/CPU-fallback logic, exercised with nothing installed."""
+
+    def test_resolve_device_auto_follows_cuda_availability(self):
+        from translator_app.translate.whisper_ja_en import _resolve_device
+
+        self.assertEqual(_resolve_device("auto", cuda_available=True), "cuda")
+        self.assertEqual(_resolve_device("auto", cuda_available=False), "cpu")
+
+    def test_resolve_device_honors_explicit_choice(self):
+        from translator_app.translate.whisper_ja_en import _resolve_device
+
+        self.assertEqual(_resolve_device("cuda", cuda_available=False), "cuda")
+        self.assertEqual(_resolve_device("cpu", cuda_available=True), "cpu")
+
+    def test_compute_type_defaults_per_device(self):
+        from translator_app.translate.whisper_ja_en import _compute_type_for
+
+        self.assertEqual(_compute_type_for("cuda", None), "float16")
+        self.assertEqual(_compute_type_for("cpu", None), "int8")
+        self.assertEqual(_compute_type_for("cpu", "float32"), "float32")
+
+    def test_uses_gpu_when_available_and_probe_succeeds(self):
+        from translator_app.translate.whisper_ja_en import load_whisper_model
+
+        built = []
+        model = object()
+        out = load_whisper_model(
+            "small", "auto", None,
+            build=lambda size, dev, ct: built.append((dev, ct)) or model,
+            probe=lambda m: None,
+            cuda_available=True,
+        )
+        self.assertIs(out, model)
+        self.assertEqual(built, [("cuda", "float16")])
+
+    def test_falls_back_to_cpu_when_gpu_probe_fails(self):
+        from translator_app.translate.whisper_ja_en import load_whisper_model
+
+        built = []
+        cpu_model = object()
+
+        def build(size, dev, ct):
+            built.append((dev, ct))
+            return "gpu-model" if dev == "cuda" else cpu_model
+
+        def probe(_m):
+            raise RuntimeError("Library cublas64_12.dll is not found or cannot be loaded")
+
+        out = load_whisper_model(
+            "small", "auto", None, build=build, probe=probe, cuda_available=True
+        )
+        self.assertIs(out, cpu_model)
+        self.assertEqual(built, [("cuda", "float16"), ("cpu", "int8")])
+
+    def test_skips_gpu_entirely_when_no_cuda_device(self):
+        from translator_app.translate.whisper_ja_en import load_whisper_model
+
+        built = []
+        out = load_whisper_model(
+            "small", "auto", None,
+            build=lambda size, dev, ct: built.append((dev, ct)) or "m",
+            probe=lambda m: None,
+            cuda_available=False,
+        )
+        self.assertEqual(out, "m")
+        self.assertEqual(built, [("cpu", "int8")])
+
+
 if __name__ == "__main__":
     unittest.main()
