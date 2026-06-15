@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://app-builder.local/contracts/schemas/v1/ship-checklist.schema.json",
+  "title": "Ship Checklist Frontmatter",
+  "type": "object",
+  "required": ["schema_version", "project", "shipped_at", "review_decision", "reviewed_at"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "project": { "type": "string", "minLength": 1 },
+    "shipped_at": { "type": "string", "format": "date-time" },
+    "review_decision": { "const": "approved" },
+    "reviewed_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": true
+}

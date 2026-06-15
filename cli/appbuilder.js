@@ -30,6 +30,7 @@ const {
   validateBuildReport,
   validateTestReport,
   validateReviewReport,
+  validateShipChecklist,
   parseFrontmatter
 } = require("./lib/validate");
 const {
@@ -52,7 +53,7 @@ const { build } = require("./lib/build");
 const { test } = require("./lib/test");
 const { review } = require("./lib/review");
 
-const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report", "build-manifest", "build-report", "test-report", "review-report"];
+const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report", "build-manifest", "build-report", "test-report", "review-report", "ship-checklist"];
 
 function main(argv = process.argv.slice(2), cwd = process.cwd()) {
   const command = argv[0] || "help";
@@ -321,6 +322,7 @@ module.exports = {
   validateBuildReport,
   validateTestReport,
   validateReviewReport,
+  validateShipChecklist,
   parseFrontmatter,
   buildHandoffMarkdown,
   pathsOverlap,
