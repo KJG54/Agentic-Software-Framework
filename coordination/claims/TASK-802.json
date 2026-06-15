@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-802",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-802-implement-the-test-verb-run-gate-report",
+  "claimed_at": "2026-06-15T00:02:57.326Z",
+  "heartbeat_at": "2026-06-15T00:02:57.326Z",
+  "expires_at": "2026-06-15T04:02:57.326Z",
+  "files_touched_estimate": [
+    "cli/lib/test.js",
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "depends_on": [
+    "TASK-801"
+  ],
+  "overlap_override": null
+}
