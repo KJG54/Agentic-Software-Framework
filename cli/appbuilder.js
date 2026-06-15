@@ -52,6 +52,7 @@ const { templates } = require("./lib/templates");
 const { build } = require("./lib/build");
 const { test } = require("./lib/test");
 const { review } = require("./lib/review");
+const { ship } = require("./lib/ship");
 
 const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report", "build-manifest", "build-report", "test-report", "review-report", "ship-checklist"];
 
@@ -94,8 +95,7 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
       case "review":
         return review(cwd, args);
       case "ship":
-        console.log(`${command} is reserved for a later phase. Coordination commands are available now.`);
-        return 0;
+        return ship(cwd, args);
       default:
         console.error(`Unknown command: ${command}`);
         printHelp();
@@ -141,8 +141,8 @@ Review commands:
   review init <slug>       Seed build/<slug>/review-report.md (gated on test-report.json; --force to re-seed)
   review <slug>            Validate the filled-in review and gate on decision: approved
 
-Later-phase workflow placeholders:
-  ship`);
+Ship commands:
+  ship <slug>              Verify the full chain and write build/<slug>/ship-checklist.md (--force to regenerate)`);
 }
 
 function doctor(cwd) {
