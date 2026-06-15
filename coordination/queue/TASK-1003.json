@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-1003",
+  "title": "Document the ship phase",
+  "description": "Add a Ship section to README.md (the single verb, what the full-chain gate checks, the generated checklist, link to HOWTO) and a thorough ship-phase walkthrough to HOWTO.md after the Review section (the single verb, the full-chain gate rules, the generated checklist content, --force, a failure-mode -> fix table), renumbering the subsequent sections. Update README/HOWTO wording so the loop is described as placeholder-free (no remaining ship placeholder). Docs only.",
+  "depends_on": [
+    "TASK-1002"
+  ],
+  "files_touched_estimate": [
+    "README.md",
+    "HOWTO.md"
+  ],
+  "acceptance_criteria": [
+    "HOWTO.md has a thorough ship-phase walkthrough with the full-chain gate rules and a failure-mode table; later sections renumbered.",
+    "README.md has a Ship section; the placeholder wording is gone (loop described as complete).",
+    "doctor stays green (no broken plan-interview/onboarding references)."
+  ]
+}

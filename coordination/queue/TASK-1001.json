@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-1001",
+  "title": "Author the ship-checklist contract and validator",
+  "description": "Add contracts/schemas/v1/ship-checklist.schema.json as a flat markdown-frontmatter schema (required: schema_version const 1.0, project, shipped_at date-time, review_decision const approved, reviewed_at date-time; additionalProperties true, like review-report.schema.json). Add validateShipChecklist(frontmatter, root) to cli/lib/validate.js using validateMarkdownArtifact, export it, import + re-export it in cli/appbuilder.js, and append 'ship-checklist' to REQUIRED_SCHEMA_NAMES. Test-first: validateShipChecklist unit tests (valid frontmatter passes; bad review_decision and missing required fields fail).",
+  "depends_on": [],
+  "files_touched_estimate": [
+    "contracts/schemas/v1/ship-checklist.schema.json",
+    "cli/lib/validate.js",
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "ship-checklist.schema.json validates flat frontmatter with review_decision const approved and the required date-time fields.",
+    "validateShipChecklist is exported from cli/lib/validate.js and re-exported from cli/appbuilder.js.",
+    "REQUIRED_SCHEMA_NAMES includes 'ship-checklist' (doctor checks it).",
+    "Full suite passes: node --test \"tests/**/*.test.js\"."
+  ]
+}

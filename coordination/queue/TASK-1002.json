@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "id": "TASK-1002",
+  "title": "Implement the ship verb (full-chain generator) and remove the placeholder group",
+  "description": "Add cli/lib/ship.js exporting ship(cwd, args): `ship <slug>` collects failures and gates on build/<slug>/scaffold-report.json + build-report.json + test-report.json (all present and parsing) AND build/<slug>/review-report.md present with valid frontmatter and decision == approved. On any failure it prints `fail ship:` lines, exits 1, and writes nothing. On success it reads the reports and writes build/<slug>/ship-checklist.md: flat frontmatter (schema_version 1.0, project, shipped_at now ISO, review_decision approved, reviewed_at carried from review-report) plus ## Phase Summary (with test counts from test-report.json), ## Artifacts (built-file union from build-report.json plus the upstream reports), and ## Manual Go-Live Steps (static checkboxes). The generated frontmatter must pass validateShipChecklist before writing; ship refuses to overwrite an existing ship-checklist.md without --force. Replace the placeholder `case \"ship\"` in cli/appbuilder.js with `return ship(cwd, args)`, add a 'Ship commands:' help block, and remove the now-empty 'Later-phase workflow placeholders' group. Test-first: happy path (scaffold->build->test->review approved -> ship writes a valid checklist with correct counts); reds (missing each of scaffold/build/test report, decision changes_requested -> fail ship, exit 1, no file); --force (second run without --force refuses, with --force regenerates).",
+  "depends_on": [
+    "TASK-1001"
+  ],
+  "files_touched_estimate": [
+    "cli/lib/ship.js",
+    "cli/appbuilder.js",
+    "tests/appbuilder.test.js"
+  ],
+  "acceptance_criteria": [
+    "`appbuilder ship <slug>` writes a schema-valid build/<slug>/ship-checklist.md only when scaffold/build/test reports exist and review-report.md decision == approved.",
+    "On any chain failure ship prints `fail ship:` lines, exits non-zero, and writes nothing; without --force it refuses to overwrite an existing checklist.",
+    "ship is routed as its own command with help text; the 'Later-phase workflow placeholders' group is removed.",
+    "Full suite passes: node --test \"tests/**/*.test.js\"."
+  ]
+}
