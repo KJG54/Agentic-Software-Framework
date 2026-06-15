@@ -6,7 +6,9 @@ App Builder V2 is a CLI-first, artifact-driven workbench for moving an idea thro
 Idea -> Requirements -> Plan -> Scaffold -> Build -> Test -> Review -> Ship
 ```
 
-The first implementation batch focuses on the multi-agent coordination foundation: versioned contracts, a root config, focused agent rules, an internal coordination worktree, claims, handoffs, readiness checks, and generated status.
+The full loop is implemented end to end, built on a multi-agent coordination foundation: versioned contracts, a root config, focused agent rules, an internal coordination worktree, claims, handoffs, readiness checks, and generated status.
+
+> New here? Start with **[GUIDE.md](GUIDE.md)** — a plain-language tour of what this is, everything it does, and the whole workflow step by step. This README is the quick command reference.
 
 ## Quickstart
 
