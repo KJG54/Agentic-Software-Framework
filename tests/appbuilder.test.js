@@ -1068,6 +1068,109 @@ test("test gate fails on missing build-report, a failing test, and zero tests", 
   assert(!fs.existsSync(reportPath), "no report when no tests ran");
 });
 
+// Drive a project through scaffold -> build -> test so the review phase has a tested build.
+function testedDemoApp(fixture) {
+  const buildDir = buildDemoApp(fixture);
+  run(process.execPath, [cliPath, "test", "demo-app"], fixture);
+  return buildDir;
+}
+
+// An approved review-report.md body, with all required sections filled.
+function approvedReview(slug, decision = "approved") {
+  return [
+    "---",
+    'schema_version: "1.0"',
+    `project: ${slug}`,
+    `reviewed_at: ${new Date().toISOString()}`,
+    `decision: ${decision}`,
+    "---",
+    "",
+    `# Review: ${slug}`,
+    "",
+    "## Summary",
+    "",
+    "The build is complete and the tests pass.",
+    "",
+    "## Findings",
+    "",
+    "No blocking issues found.",
+    "",
+    "## Checklist",
+    "",
+    "- Requirements met",
+    ""
+  ].join("\n");
+}
+
+test("review init seeds a stub gated on the test phase", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+
+  // Before the build is tested, review init refuses.
+  buildDemoApp(fixture);
+  const noTest = runFail(process.execPath, [cliPath, "review", "init", "demo-app"], fixture);
+  assert.match(noTest.stdout + noTest.stderr, /test/i);
+
+  // After test, it seeds a schema-valid, not-yet-approved stub.
+  run(process.execPath, [cliPath, "test", "demo-app"], fixture);
+  run(process.execPath, [cliPath, "review", "init", "demo-app"], fixture);
+  const reportPath = path.join(fixture, "build", "demo-app", "review-report.md");
+  const text = fs.readFileSync(reportPath, "utf8");
+  const parsed = cli.parseFrontmatter(text);
+  assert.equal(parsed.data.decision, "changes_requested");
+  assert.equal(cli.validateReviewReport(parsed.data, fixture).ok, true);
+  for (const heading of ["## Summary", "## Findings", "## Checklist"]) {
+    assert.match(text, new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+
+  // Refuses to overwrite without --force; --force re-seeds.
+  const refused = runFail(process.execPath, [cliPath, "review", "init", "demo-app"], fixture);
+  assert.match(refused.stdout + refused.stderr, /already exists|--force/);
+  run(process.execPath, [cliPath, "review", "init", "demo-app", "--force"], fixture);
+});
+
+test("review passes only on an approved, complete report", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  const buildDir = testedDemoApp(fixture);
+  const reportPath = path.join(buildDir, "review-report.md");
+
+  // A filled-in, approved review passes.
+  fs.writeFileSync(reportPath, approvedReview("demo-app"));
+  const ok = run(process.execPath, [cliPath, "review", "demo-app"], fixture);
+  assert.match(ok.stdout, /decision=approved/);
+});
+
+test("review gate rejects missing test-report, missing report, changes_requested, and empty sections", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  const buildDir = buildDemoApp(fixture);
+  const reportPath = path.join(buildDir, "review-report.md");
+
+  // No test-report yet -> precondition fails (and no review report exists either).
+  const noTest = runFail(process.execPath, [cliPath, "review", "demo-app"], fixture);
+  assert.match(noTest.stdout + noTest.stderr, /fail review:/);
+
+  run(process.execPath, [cliPath, "test", "demo-app"], fixture);
+
+  // test-report exists but no review-report.md -> fail.
+  const noReport = runFail(process.execPath, [cliPath, "review", "demo-app"], fixture);
+  assert.match(noReport.stdout + noReport.stderr, /review init|no review report/i);
+
+  // Approved but with an empty required section -> fail.
+  fs.writeFileSync(reportPath, approvedReview("demo-app").replace("No blocking issues found.", ""));
+  const emptySection = runFail(process.execPath, [cliPath, "review", "demo-app"], fixture);
+  assert.match(emptySection.stdout + emptySection.stderr, /Findings/);
+
+  // Complete but not approved -> fail.
+  fs.writeFileSync(reportPath, approvedReview("demo-app", "changes_requested"));
+  const notApproved = runFail(process.execPath, [cliPath, "review", "demo-app"], fixture);
+  assert.match(notApproved.stdout + notApproved.stderr, /approved/);
+});
+
+test("start is no longer a recognized command", { timeout: 30000 }, () => {
+  const fixture = makeFixture();
+  const removed = runFail(process.execPath, [cliPath, "start"], fixture);
+  assert.match(removed.stdout + removed.stderr, /Unknown command: start/);
+});
+
 test("plan seed publishes tasks and skips ids already in the queue", { timeout: 30000 }, () => {
   const fixture = makeFixture();
   run("git", ["init", "-b", "main"], fixture);

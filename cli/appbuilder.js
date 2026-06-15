@@ -50,6 +50,7 @@ const { scaffold } = require("./lib/scaffold");
 const { templates } = require("./lib/templates");
 const { build } = require("./lib/build");
 const { test } = require("./lib/test");
+const { review } = require("./lib/review");
 
 const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "scaffold-report", "build-manifest", "build-report", "test-report", "review-report"];
 
@@ -89,8 +90,8 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
         return build(cwd, args);
       case "test":
         return test(cwd, args);
-      case "start":
       case "review":
+        return review(cwd, args);
       case "ship":
         console.log(`${command} is reserved for a later phase. Coordination commands are available now.`);
         return 0;
@@ -135,8 +136,12 @@ Build commands:
 Test commands:
   test <slug>              Run the built project's tests and write build/<slug>/test-report.json
 
+Review commands:
+  review init <slug>       Seed build/<slug>/review-report.md (gated on test-report.json; --force to re-seed)
+  review <slug>            Validate the filled-in review and gate on decision: approved
+
 Later-phase workflow placeholders:
-  start review ship`);
+  ship`);
 }
 
 function doctor(cwd) {
