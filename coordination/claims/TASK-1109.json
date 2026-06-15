@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-1109",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-1109-exit-controls-and-clean-shutdown",
+  "claimed_at": "2026-06-15T07:48:11.889Z",
+  "heartbeat_at": "2026-06-15T07:48:11.889Z",
+  "expires_at": "2026-06-15T11:48:11.889Z",
+  "files_touched_estimate": [
+    "projects/translator-app/src/translator_app/ui/exit_controls.py",
+    "projects/translator-app/src/translator_app/app.py",
+    "projects/translator-app/tests/test_shutdown.py"
+  ],
+  "depends_on": [
+    "TASK-1108",
+    "TASK-1103"
+  ],
+  "overlap_override": null
+}
