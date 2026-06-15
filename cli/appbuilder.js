@@ -32,6 +32,7 @@ const {
   validateReviewReport,
   validateShipChecklist,
   validateAdr,
+  validateLesson,
   validateInternalToolRegistry,
   parseFrontmatter
 } = require("./lib/validate");
@@ -56,8 +57,9 @@ const { test } = require("./lib/test");
 const { review } = require("./lib/review");
 const { ship } = require("./lib/ship");
 const { decision } = require("./lib/decision");
+const { lesson, lessons } = require("./lib/lessons");
 
-const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "stack-decision", "scaffold-report", "build-manifest", "build-report", "test-report", "review-report", "ship-checklist", "adr", "internal-tool-registry"];
+const REQUIRED_SCHEMA_NAMES = ["appbuilder-config", "queue-task", "claim", "handoff", "registry", "template", "mcp-profile", "requirements", "task-plan", "stack-decision", "scaffold-report", "build-manifest", "build-report", "test-report", "review-report", "ship-checklist", "adr", "internal-tool-registry", "lesson"];
 
 function main(argv = process.argv.slice(2), cwd = process.cwd()) {
   const command = argv[0] || "help";
@@ -101,6 +103,10 @@ function main(argv = process.argv.slice(2), cwd = process.cwd()) {
         return ship(cwd, args);
       case "decision":
         return decision(cwd, args);
+      case "lesson":
+        return lesson(cwd, args);
+      case "lessons":
+        return lessons(cwd, args);
       default:
         console.error(`Unknown command: ${command}`);
         printHelp();
@@ -150,7 +156,11 @@ Ship commands:
   ship <slug>              Verify the full chain and write build/<slug>/ship-checklist.md (--force to regenerate)
 
 Decision-record commands:
-  decision add ...         Write an ADR to vault/framework/decisions/ (--title --context --decision --consequences [--status --date --option])`);
+  decision add ...         Write an ADR to vault/framework/decisions/ (--title --context --decision --consequences [--status --date --option])
+
+Memory commands:
+  lesson add ...           Capture a lesson to vault/framework/lessons/ (--project --context --rule (--worked|--failed) [--date --tag --force])
+  lessons [query]          Search prior lessons + project notes in the vault (read-only; --limit N)`);
 }
 
 function doctor(cwd) {
@@ -348,6 +358,7 @@ module.exports = {
   validateReviewReport,
   validateShipChecklist,
   validateAdr,
+  validateLesson,
   validateInternalToolRegistry,
   parseFrontmatter,
   buildHandoffMarkdown,

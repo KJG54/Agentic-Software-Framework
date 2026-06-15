@@ -29,6 +29,16 @@ This guide is agent-agnostic: Claude Code reaches it via the `/plan` command, Co
 
 ---
 
+## Step 0 — consult prior lessons
+
+Before the first question, run `appbuilder lessons "<keywords from the idea>"` to surface relevant
+prior lessons and project notes from the vault. Skim the top few. Treat any `reusable_rule` as a
+**hypothesis to verify against this project**, not a fact to apply blindly — see
+[.agent/rules/memory.md](.agent/rules/memory.md). Let useful prior art shape your questions; never
+let it override the operator.
+
+---
+
 ## Phase A — universal triage
 
 Every project gets these four, in order. The fourth classifies the build-type and routes to the
@@ -145,7 +155,9 @@ Do **not** write to disk until the operator confirms. Two gates:
      - `performance[]` — latency, throughput, or resource targets.
      - `timeline` — any deadline or milestone the operator stated.
      - `success_criteria[]` — how "done"/"working" is judged (the acceptance bar).
-2. **Show it back in plain language** and ask the operator to confirm or correct.
+2. **Show it back in plain language** and ask the operator to confirm or correct. If a prior
+   lesson (from Step 0) influenced any requirement, say so and confirm it still holds *for this
+   project* before keeping it.
 3. On confirmation: run `appbuilder plan new <slug>` (if not already done) and write
    `requirements.json`.
 

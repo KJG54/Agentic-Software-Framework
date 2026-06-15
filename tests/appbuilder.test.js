@@ -1324,6 +1324,7 @@ test("ship writes a schema-valid checklist when the full chain passes", { timeou
 
   const result = run(process.execPath, [cliPath, "ship", "demo-app"], fixture);
   assert.match(result.stdout, /ship demo-app/);
+  assert.match(result.stdout, /lesson add/, "ship reminds the operator to capture a lesson");
   assert(fs.existsSync(checklistPath), "ship-checklist.md should be written on a passing chain");
 
   const text = fs.readFileSync(checklistPath, "utf8");
@@ -1725,6 +1726,89 @@ test("doctor validates the tool registry", () => {
   const fixture = makeFixture();
   const out = spawnSync(process.execPath, [cliPath, "doctor"], { cwd: fixture, encoding: "utf8" }).stdout;
   assert.match(out, /ok tools:registry/);
+});
+
+// --- lessons / memory layer (TASK 1) ---------------------------------------
+
+test("validateLesson accepts a well-formed lesson and rejects bad ones", () => {
+  const good = {
+    schema_version: "1.0",
+    project: "demo-app",
+    context: "Packaging a GUI app with PyInstaller.",
+    what_worked: "Splitting click-through into its own window.",
+    reusable_rule: "Never make interactive controls children of a click-through window.",
+    date: "2026-06-15"
+  };
+  assert.equal(cli.validateLesson(good).ok, true, (cli.validateLesson(good).errors || []).join("; "));
+
+  const noRule = cli.validateLesson({ ...good, reusable_rule: undefined });
+  assert.equal(noRule.ok, false);
+  const badDate = cli.validateLesson({ ...good, date: "June 15" });
+  assert.equal(badDate.ok, false);
+  assert(badDate.errors.some((e) => e.includes("date")));
+});
+
+test("lesson add writes a schema-valid lesson on the working tree", () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "lesson", "add",
+    "--project", "demo-app",
+    "--context", "Packaging a GUI app.",
+    "--rule", "Keep controls out of the click-through layer",
+    "--worked", "A separate interactive window",
+    "--date", "2026-06-15"], fixture);
+
+  const lessonsDir = path.join(fixture, "vault", "framework", "lessons");
+  const files = fs.readdirSync(lessonsDir).filter((f) => f.endsWith(".md"));
+  assert.equal(files.length, 1);
+  assert.match(files[0], /^2026-06-15-demo-app-.*\.md$/);
+
+  const parsed = cli.parseFrontmatter(fs.readFileSync(path.join(lessonsDir, files[0]), "utf8"));
+  assert.equal(cli.validateLesson(parsed.data).ok, true, (cli.validateLesson(parsed.data).errors || []).join("; "));
+  assert.equal(parsed.data.what_worked, "A separate interactive window");
+});
+
+test("lesson add needs content and refuses to clobber without --force", () => {
+  const fixture = makeFixture();
+  const noContent = runFail(process.execPath, [cliPath, "lesson", "add",
+    "--project", "demo-app", "--context", "c", "--rule", "r"], fixture);
+  assert.match(noContent.stdout + noContent.stderr, /--worked|--failed/);
+
+  const args = ["lesson", "add", "--project", "demo-app", "--context", "c",
+    "--rule", "same rule", "--worked", "w", "--date", "2026-06-15"];
+  run(process.execPath, [cliPath, ...args], fixture);
+  const clobber = runFail(process.execPath, [cliPath, ...args], fixture);
+  assert.match(clobber.stdout + clobber.stderr, /already exists|--force/);
+  run(process.execPath, [cliPath, ...args, "--force"], fixture);
+});
+
+test("lessons retrieves by keyword and lists recent on an empty query", () => {
+  const fixture = makeFixture();
+  run(process.execPath, [cliPath, "lesson", "add", "--project", "demo-app",
+    "--context", "Token budgeting in long sessions.", "--rule", "Compress handoffs",
+    "--worked", "Shorter notes", "--date", "2026-06-10"], fixture);
+  run(process.execPath, [cliPath, "lesson", "add", "--project", "demo-app",
+    "--context", "Overlay click-through.", "--rule", "Separate the controls window",
+    "--failed", "Children inherited click-through", "--date", "2026-06-15"], fixture);
+
+  // Keyword match surfaces the relevant lesson and does not dump the body.
+  const hit = run(process.execPath, [cliPath, "lessons", "overlay"], fixture);
+  assert.match(hit.stdout, /Separate the controls window/);
+  assert.match(hit.stdout, /matched=1/);
+  assert.doesNotMatch(hit.stdout, /Children inherited click-through/);
+
+  // A non-matching query returns nothing.
+  const miss = run(process.execPath, [cliPath, "lessons", "kubernetes"], fixture);
+  assert.match(miss.stdout, /matched=0/);
+
+  // No query lists the most recent first (date-prefixed names sort by recency).
+  const recent = run(process.execPath, [cliPath, "lessons", "--limit", "1"], fixture);
+  assert.match(recent.stdout, /Separate the controls window/);
+});
+
+test("doctor checks the lesson schema", () => {
+  const fixture = makeFixture();
+  const out = spawnSync(process.execPath, [cliPath, "doctor"], { cwd: fixture, encoding: "utf8" }).stdout;
+  assert.match(out, /ok schema:lesson/);
 });
 
 function configureGitUser(repo) {

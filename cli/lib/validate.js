@@ -75,6 +75,10 @@ function validateAdr(frontmatter, root) {
   return validateMarkdownArtifact(validationRoot(root), "adr", frontmatter);
 }
 
+function validateLesson(frontmatter, root) {
+  return validateMarkdownArtifact(validationRoot(root), "lesson", frontmatter);
+}
+
 function validateInternalToolRegistry(registry, root) {
   const result = validateJsonArtifact(validationRoot(root), "internal-tool-registry", registry);
   const errors = [...result.errors];
@@ -170,6 +174,7 @@ module.exports = {
   validateReviewReport,
   validateShipChecklist,
   validateAdr,
+  validateLesson,
   validateInternalToolRegistry,
   validateHandoff,
   parseFrontmatter,

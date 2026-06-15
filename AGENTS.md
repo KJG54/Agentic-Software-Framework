@@ -99,3 +99,4 @@ The full rules live in [.agent/rules/](.agent/rules/) — read the one relevant 
 - [token-use.md](.agent/rules/token-use.md) — keep context focused.
 - [collaboration.md](.agent/rules/collaboration.md) — advise before executing.
 - [tool-discovery.md](.agent/rules/tool-discovery.md) — check existing tools/templates/memory before building new.
+- [memory.md](.agent/rules/memory.md) — retrieve lessons before planning, verify don't trust, capture after shipping.

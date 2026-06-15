@@ -81,6 +81,7 @@ function ship(cwd, args = []) {
   console.log(`ship ${slug}`);
   console.log(`review_decision=approved reviewed_at=${frontmatter.reviewed_at}`);
   console.log(`checklist=build/${slug}/ship-checklist.md`);
+  console.log(`note: capture a lesson with: appbuilder lesson add --project ${slug} --context "<what this taught>" --rule "<reusable rule>" --worked "<...>"`);
   return 0;
 }
 
