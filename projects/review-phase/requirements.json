@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "project": "review-phase",
+  "summary": "Implement the review phase — the loop gate after test and before ship. `appbuilder review init <slug>` seeds a structured build/<slug>/review-report.md stub (gated on test-report.json), the agent/human writes the review prose and sets a decision, and `appbuilder review <slug>` validates the report and gates on decision == approved. The artifact is markdown with flat frontmatter (mirroring architecture.md/handoff.md), not a JSON report; there is no LLM. This slice also removes the vestigial `start` command, which is not part of the canonical loop.",
+  "goals": [
+    "Add `appbuilder review init <slug>` to seed a schema-valid review-report.md stub, gated on the build having been tested.",
+    "Add `appbuilder review <slug>` as a validation gate that passes only when test-report.json exists, the review-report.md frontmatter and required sections are valid, and decision == approved.",
+    "Define a review-report.md frontmatter contract (markdown artifact) consistent with the existing flat-frontmatter parser and the handoff/architecture precedent.",
+    "Remove the dead `start` placeholder command from the router, help, and docs.",
+    "Ship a thorough operator walkthrough so a human can run and understand the review phase end to end."
+  ],
+  "features": [
+    {
+      "name": "review-report contract + validator",
+      "description": "Add contracts/schemas/v1/review-report.schema.json (flat frontmatter: schema_version const 1.0, project, reviewed_at date-time, decision enum approved|changes_requested; additionalProperties true). Add validateReviewReport to cli/lib/validate.js using validateMarkdownArtifact, export it, re-export from cli/appbuilder.js, and register 'review-report' in REQUIRED_SCHEMA_NAMES."
+    },
+    {
+      "name": "review verb (init + gate)",
+      "description": "Add cli/lib/review.js: `review init` gates on build/<slug>/test-report.json, refuses to overwrite review-report.md without --force, and seeds flat frontmatter (decision: changes_requested) plus ## Summary/## Findings/## Checklist headings. `review` collects failures and passes only when test-report exists, review-report.md exists, frontmatter validates, the required sections are non-empty, and decision == approved; on failure prints fail review: lines and writes nothing new. Wire `case review` in cli/appbuilder.js and add help text."
+    },
+    {
+      "name": "remove the start placeholder",
+      "description": "Remove the `case \"start\"` from the cli/appbuilder.js router and drop `start` from the help placeholder line and the README/HOWTO 'placeholders'/'later phases' wording, leaving only ship. `start` is not in the canonical loop and has no behavior."
+    },
+    {
+      "name": "operator documentation",
+      "description": "Add a Review section to README.md and a thorough review-phase walkthrough to HOWTO.md (the two verbs, the gate rules, the decision field, a failure-mode -> fix table), renumbering the subsequent sections."
+    }
+  ],
+  "constraints": [
+    "No LLM in the CLI; review is a deterministic seed + validation gate over an agent-authored report.",
+    "Zero new dependencies; reuse the existing custom validator, parseFrontmatter, and markdown-artifact validation.",
+    "review-report.md frontmatter must stay flat (the frontmatter parser does not support nested objects).",
+    "Approval must be deliberate: the seeded decision defaults to changes_requested.",
+    "Do not change other phases; only add review and remove the dead start command.",
+    "Follow the established cli/lib + contracts + tests pattern; test-first.",
+    "All three tasks touch tests/appbuilder.test.js, so they serialize (one merge at a time)."
+  ]
+}
