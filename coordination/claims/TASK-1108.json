@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "task": "TASK-1108",
+  "owner": "kryst@KJ",
+  "branch": "agent/TASK-1108-auto-hiding-settings-bar",
+  "claimed_at": "2026-06-15T07:41:19.672Z",
+  "heartbeat_at": "2026-06-15T07:41:19.672Z",
+  "expires_at": "2026-06-15T11:41:19.672Z",
+  "files_touched_estimate": [
+    "projects/translator-app/src/translator_app/ui/settings_bar.py",
+    "projects/translator-app/tests/test_settings_bar.py"
+  ],
+  "depends_on": [
+    "TASK-1106"
+  ],
+  "overlap_override": null
+}
