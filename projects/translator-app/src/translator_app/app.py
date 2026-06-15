@@ -53,6 +53,15 @@ class AsrWorker:
     def is_running(self) -> bool:
         return self._thread is not None and self._thread.is_alive()
 
+    def set_pipeline(self, pipeline) -> None:
+        """Swap the active pipeline. Picked up on the next drained frame.
+
+        Lets the latency/accuracy reconfigurator (TASK-1110) replace the ASR
+        pipeline while the worker keeps running -- attribute assignment is atomic
+        and ``_run`` re-reads ``self.pipeline`` each iteration.
+        """
+        self.pipeline = pipeline
+
     def start(self) -> None:
         if self.is_running():
             raise RuntimeError("asr worker is already running")
