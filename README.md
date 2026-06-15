@@ -140,4 +140,26 @@ validates it.
 
 See [HOWTO.md](HOWTO.md) for the full operator walkthrough.
 
-The workflow command `ship` is present as a placeholder for the final phase.
+## Ship
+
+```bash
+appbuilder ship <slug>              # verify the full chain, write build/<slug>/ship-checklist.md
+appbuilder ship <slug> --force      # regenerate over an existing checklist
+```
+
+`ship` is the terminal phase that closes the loop — still **no LLM**. A single verb (there is
+nothing to seed): it verifies the *whole* chain is on disk and rolls those facts up into
+`build/<slug>/ship-checklist.md`.
+
+- The full-chain gate collects **every** failure before writing anything: `scaffold-report.json`,
+  `build-report.json`, and `test-report.json` must exist and parse, and `review-report.md` must have
+  valid frontmatter with **`decision: approved`**. On any failure it prints each `fail ship:` line
+  and writes nothing.
+- On a passing chain it writes `build/<slug>/ship-checklist.md` (markdown with validated frontmatter):
+  a `## Phase Summary` with the test counts, a `## Artifacts` roll-up (the built files plus the four
+  upstream reports), and static `## Manual Go-Live Steps` checkboxes — informational reminders the
+  CLI never verifies.
+- Like `scaffold` and `review init`, it refuses to overwrite an existing checklist without `--force`,
+  so a human's go-live ticks survive a re-run.
+
+See [HOWTO.md](HOWTO.md) for the full operator walkthrough.

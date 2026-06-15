@@ -331,9 +331,75 @@ field for the ship phase to read. Common failures and their fixes:
 | `decision is "changes_requested" …` | Address the findings, then set `decision: approved`. |
 
 Re-run `appbuilder review <slug>` until it passes. An approved `review-report.md` is what the
-`ship` phase (a later slice) will build on.
+`ship` phase reads to close the loop.
 
-## 7. How work gets done
+## 7. Ship the build (`review-report.md` → `ship-checklist.md`)
+
+`ship` is the terminal phase that closes the loop. Like every phase it has **no LLM**, and like
+`test`/`scaffold` it is a single verb — there is nothing to seed, because the artifact is entirely
+CLI-generated. `ship` verifies the *whole* chain is on disk and rolls those facts up into
+`build/<slug>/ship-checklist.md`.
+
+```bash
+appbuilder ship my-app           # verify the full chain, write build/my-app/ship-checklist.md
+appbuilder ship my-app --force   # regenerate over an existing checklist
+```
+
+### Step 1 — the full-chain gate
+
+Unlike the earlier per-phase gates, `ship` re-checks the **entire** upstream chain and collects
+*every* failure before writing anything. It passes only when all of these hold:
+
+1. `build/my-app/scaffold-report.json` exists and parses.
+2. `build/my-app/build-report.json` exists and parses.
+3. `build/my-app/test-report.json` exists and parses.
+4. `build/my-app/review-report.md` exists, its frontmatter validates, and **`decision: approved`**.
+
+On **any** failure it prints each problem as a `fail ship: …` line, exits non-zero, and writes
+nothing. Common failures and their fixes:
+
+| `fail ship: …` says | Fix |
+| --- | --- |
+| `no scaffold-report …` | Run `appbuilder scaffold <slug>`. |
+| `no build-report …` | Run `appbuilder build <slug>` until it reports. |
+| `no test-report …` | Run `appbuilder test <slug>` until it passes. |
+| `no review report …` | Run `appbuilder review init <slug>` and fill it in. |
+| `review decision is "changes_requested" …` | Finish the review and set `decision: approved`. |
+| `… already exists. Re-run with --force` | The build already shipped; pass `--force` only if you mean to regenerate. |
+
+### Step 2 — the generated checklist
+
+On a passing chain `ship` reads the reports and writes `build/my-app/ship-checklist.md` — markdown
+with validated flat frontmatter, plus three sections:
+
+```markdown
+---
+schema_version: "1.0"
+project: my-app
+shipped_at: 2026-06-15T00:00:00.000Z
+review_decision: approved
+reviewed_at: 2026-06-14T00:00:00.000Z
+---
+
+# Ship Checklist: my-app
+
+## Phase Summary
+- Scaffold / Build / Test / Review roll-up (with the test counts from test-report.json)
+
+## Artifacts
+- the built files (from build-report.json) plus the four upstream reports
+
+## Manual Go-Live Steps
+- [ ] Tag the release, update the changelog, deploy, announce …
+```
+
+The `## Manual Go-Live Steps` checkboxes are **informational** — the CLI never verifies or ticks
+them; they are a reminder list for the human shipping the release. Because they are human-tickable,
+`ship` **refuses to overwrite an existing `ship-checklist.md` without `--force`** (like `scaffold`
+and `review init`), so a re-run never wipes your go-live progress. A checklist on disk always means
+the full-chain gate passed.
+
+## 8. How work gets done
 
 Once tasks are in the queue, an agent (or you) runs the coordination loop per task:
 
@@ -371,7 +437,14 @@ load automatically — if they don't appear, run `/doctor` (or `appbuilder docto
 The commands are thin wrappers; the underlying `appbuilder` verbs work the same without them.
 Codex agents don't get the shortcuts but auto-load the same workflow from [AGENTS.md](AGENTS.md).
 
-## Later phases
+## The loop, end to end
 
-`ship` is a placeholder today. It will fill in the final step of the loop
-(`plan → scaffold → build → test → review → ship`) in a future slice.
+The full loop is now implemented end to end:
+
+```text
+plan → scaffold → build → test → review → ship
+```
+
+Each phase gates on the previous one's artifact and `ship` re-verifies the whole chain before it
+writes `build/<slug>/ship-checklist.md` — the terminal artifact that marks the build ready for
+go-live.
