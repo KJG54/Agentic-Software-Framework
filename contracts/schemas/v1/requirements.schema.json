@@ -31,6 +31,27 @@
       "type": "array",
       "items": { "type": "string" },
       "default": []
+    },
+    "out_of_scope": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "security": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "performance": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "timeline": { "type": "string" },
+    "success_criteria": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
     }
   },
   "additionalProperties": true

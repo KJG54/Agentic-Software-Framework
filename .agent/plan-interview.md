@@ -112,7 +112,14 @@ Do **not** write to disk until the operator confirms. Two gates:
    - `goals[]` — the core outcome plus the other must-be-trues. Non-empty.
    - `features[]` — each `{ "name", "description" }`, drawn from the deep-dive answers.
      Non-empty; every `name` non-empty.
-   - `constraints[]` — platform, runtime, scope-outs, non-goals.
+   - `constraints[]` — platform, runtime, hard limits.
+   - **Discrete optional fields — populate each only when the answers cover it** (leave it out
+     otherwise; all are optional and backward-compatible):
+     - `out_of_scope[]` — explicit non-goals / things deliberately not built.
+     - `security[]` — security or privacy requirements (auth, data handling, secrets).
+     - `performance[]` — latency, throughput, or resource targets.
+     - `timeline` — any deadline or milestone the operator stated.
+     - `success_criteria[]` — how "done"/"working" is judged (the acceptance bar).
 2. **Show it back in plain language** and ask the operator to confirm or correct.
 3. On confirmation: run `appbuilder plan new <slug>` (if not already done) and write
    `requirements.json`.
