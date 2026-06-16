@@ -169,6 +169,13 @@ class SettingsBarWidget:
         QtWidgets = mods.QtWidgets
 
         self.widget = QtWidgets.QWidget(parent)
+        # Solid bar background: the controls window is a layered/translucent window,
+        # and Windows lets clicks fall through its fully-transparent pixels -- so an
+        # un-painted bar would only be clickable on the controls themselves. A solid
+        # background makes the whole revealed strip opaque (clickable end-to-end) and
+        # reads as a proper bar. WA_StyledBackground makes the stylesheet bg paint.
+        self.widget.setAttribute(mods.QtCore.Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.widget.setStyleSheet("background-color: rgba(20,20,20,225); color: #FFFFFF;")
         layout = QtWidgets.QHBoxLayout(self.widget)
 
         # Language pair

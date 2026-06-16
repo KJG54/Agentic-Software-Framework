@@ -140,6 +140,33 @@ def build_controls_window(*, qt_modules=None):
     )
 
 
+def enable_windows_topmost(window) -> bool:
+    """Best-effort: pin ``window`` above other always-on-top windows.
+
+    The controls window must sit above the click-through caption overlay so real
+    mouse clicks land on its buttons (Qt's ``raise_`` only orders within the app,
+    not against another top-level always-on-top window). Uses ``SetWindowPos`` with
+    ``HWND_TOPMOST`` and no move/size/activate. Windows-only; returns ``True`` when
+    applied, ``False`` otherwise. Never raises.
+    """
+    if sys.platform != "win32":
+        return False
+    try:
+        import ctypes  # noqa: PLC0415 (lazy, Windows-only)
+
+        HWND_TOPMOST = -1
+        SWP_NOSIZE = 0x0001
+        SWP_NOMOVE = 0x0002
+        SWP_NOACTIVATE = 0x0010
+        ctypes.windll.user32.SetWindowPos(
+            int(window.winId()), HWND_TOPMOST, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
+        )
+        return True
+    except Exception:
+        return False
+
+
 def enable_windows_click_through(window) -> bool:
     """Best-effort: add ``WS_EX_LAYERED | WS_EX_TRANSPARENT`` so clicks fall through.
 
