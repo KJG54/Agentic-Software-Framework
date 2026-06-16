@@ -44,6 +44,7 @@ def run() -> int:
         build_controls_window,
         build_overlay,
         enable_windows_click_through,
+        enable_windows_topmost,
     )
     from .ui.settings_bar import RevealPolicy, SettingsBarWidget
     from .ui.subtitle_renderer import (
@@ -182,7 +183,8 @@ def run() -> int:
     overlay.showFullScreen()
     enable_windows_click_through(overlay)  # best-effort; needs a realized handle
 
-    reveal = RevealPolicy(reveal_zone_px=8)  # forgiving top-edge trigger
+    reveal = RevealPolicy(reveal_zone_px=3)  # the *very top* edge
+    reveal_dwell_ms = 1000  # pointer must rest at the top for ~1s before revealing
     screen_geometry = overlay.geometry()
     screen_width = screen_geometry.width()
 
@@ -190,34 +192,43 @@ def run() -> int:
     caption_max = max(320, screen_width - 2 * renderer.style.margin_px)
     renderer.widget.setMaximumWidth(caption_max)
 
-    # Controls window: a thin, full-width interactive strip pinned to the top.
-    # NOT click-through (no enable_windows_click_through call) so it gets clicks.
+    # Controls window: a thin, full-width interactive strip pinned to the top, held
+    # ABOVE the click-through overlay (enable_windows_topmost) so its buttons get
+    # real mouse clicks -- Qt's raise_() only orders within the app, not against
+    # another top-level always-on-top window.
     controls.setGeometry(0, 0, screen_width, reveal.bar_height_px)
     settings_bar.widget.setGeometry(0, 0, screen_width, reveal.bar_height_px)
     controls.show()
     controls.raise_()
+    enable_windows_topmost(controls)
     exit_button.position_top_right(screen_width)
     exit_button.widget.raise_()
     exit_button.widget.show()
-    settings_bar.conceal()  # starts hidden; the reveal timer shows it on hover
+    settings_bar.conceal()  # hidden until the pointer dwells at the very top
 
-    # Hover-reveal driven by polling the *global* cursor position. An event filter
-    # on the thin translucent controls window proved unreliable (it only fired
-    # when the pointer was already inside the 4px zone), so instead a 100ms timer
-    # asks "is the cursor at the top edge?" via QCursor. The bar appears at the top
-    # edge and stays while the pointer is over it (RevealPolicy hysteresis); a
-    # popup guard keeps it open while a combo dropdown is showing, since that pulls
-    # the cursor below the bar.
+    # Hover-reveal by polling the *global* cursor position (an event filter on the
+    # thin translucent window proved unreliable). The bar stays hidden until the
+    # pointer rests at the very top edge for ~1s, then shows while the pointer is
+    # over the bar; a popup guard keeps it open while a combo dropdown is showing.
+    dwell = {"ms": 0}
+
     def update_reveal() -> None:
         if QtWidgets.QApplication.activePopupWidget() is not None:
             return
         cursor_y = QtGui.QCursor.pos().y() - screen_geometry.y()
-        if reveal.should_be_visible(cursor_y, currently_visible=settings_bar.is_revealed):
-            settings_bar.reveal()
-            settings_bar.widget.raise_()
-            exit_button.widget.raise_()
+        if settings_bar.is_revealed:
+            if cursor_y > reveal.bar_height_px:
+                settings_bar.conceal()
+                dwell["ms"] = 0
+            return
+        if cursor_y <= reveal.reveal_zone_px:
+            dwell["ms"] += reveal_timer.interval()
+            if dwell["ms"] >= reveal_dwell_ms:
+                settings_bar.reveal()
+                settings_bar.widget.raise_()
+                enable_windows_topmost(controls)
         else:
-            settings_bar.conceal()
+            dwell["ms"] = 0
 
     reveal_timer.setInterval(100)  # ms
     reveal_timer.timeout.connect(update_reveal)

@@ -164,6 +164,16 @@ class NativeClickThroughTest(unittest.TestCase):
         # Must never raise; returns False when it can't apply the style.
         self.assertFalse(enable_windows_click_through(BadWindow()))
 
+    def test_topmost_is_safe_when_winid_unavailable(self):
+        from translator_app.ui.overlay_window import enable_windows_topmost
+
+        class BadWindow:
+            def winId(self):
+                raise RuntimeError("no native handle yet")
+
+        # Must never raise; returns False when it can't pin the window.
+        self.assertFalse(enable_windows_topmost(BadWindow()))
+
 
 class RealQtSmokeTest(unittest.TestCase):
     def test_constructs_with_real_pyside6(self):
